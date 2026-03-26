@@ -29,7 +29,7 @@ const PARENT_TAB_TITLES: Record<string, string> = {
   attendance: "Attendance",
   marks: "Marks",
   exams: "Exams & Syllabus",
-  fees: "Fees",
+  // fees: "Fees",
   chat: "Chat",
   workshops: "Workshops",
   certificates: "Certificates",
@@ -84,8 +84,8 @@ function ParentDashboardInner() {
         return <ParentMarksTab />;
       case "exams":
         return <ParentExamsTab />;
-      case "fees":
-        return <ParentFeesTab />;
+      // case "fees":
+      //   return <ParentFeesTab />;
       case "subscription":
         return <ParentSubscriptionTab />;
       case "chat":
