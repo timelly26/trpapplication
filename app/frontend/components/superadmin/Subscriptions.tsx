@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { CreditCard, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CreditCard, Pencil, Search, ToggleLeft, ToggleRight } from "lucide-react";
 import PageHeader from "../common/PageHeader";
 import SearchInput from "../common/SearchInput";
 import TableLayout from "../common/TableLayout";
 import Spinner from "../common/Spinner";
 import { Column } from "../../types/superadmin";
+import { useDebounce } from "@/app/frontend/hooks/useDebounce";
 
 type BillingMode = "PARENT_SUBSCRIPTION" | "SCHOOL_PAID";
 
@@ -21,15 +22,48 @@ export interface SubscriptionRow {
   isActive: boolean;
 }
 
+function ModeBadge({ mode }: { mode: BillingMode }) {
+  return (
+    <div className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-white/15 bg-white/5 max-w-full">
+      {mode === "SCHOOL_PAID" ? (
+        <>
+          <ToggleRight className="w-3.5 h-3.5 text-lime-300 shrink-0" />
+          <span className="text-white/80 truncate">School Paid</span>
+        </>
+      ) : (
+        <>
+          <ToggleLeft className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+          <span className="text-white/80 truncate">Parent Sub</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatusPill({ active }: { active: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0 ${
+        active
+          ? "bg-emerald-500/10 border-emerald-400/40 text-emerald-300"
+          : "bg-red-500/10 border-red-400/40 text-red-300"
+      }`}
+    >
+      {active ? "Active" : "Deactivated"}
+    </span>
+  );
+}
+
 export default function Subscriptions() {
   const [rows, setRows] = useState<SubscriptionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<SubscriptionRow | null>(null);
 
-  const fetchSchools = async (searchTerm: string) => {
+  const fetchSchools = useCallback(async (searchTerm: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -61,12 +95,11 @@ export default function Subscriptions() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchSchools(search);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void fetchSchools(debouncedSearch);
+  }, [debouncedSearch, fetchSchools]);
 
   const handleSave = async (
     id: string,
@@ -119,9 +152,9 @@ export default function Subscriptions() {
       {
         header: "School",
         render: (r) => (
-          <div className="flex flex-col">
-            <span className="text-white font-medium">{r.name}</span>
-            <span className="text-xs text-white/50">{r.location || "-"}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-white font-medium wrap-break-word">{r.name}</span>
+            <span className="text-xs text-white/50">{r.location || "—"}</span>
           </div>
         ),
       },
@@ -129,7 +162,7 @@ export default function Subscriptions() {
         header: "Created",
         align: "center",
         render: (r) => (
-          <span className="text-xs text-white/60">
+          <span className="text-xs text-white/60 whitespace-nowrap">
             {new Date(r.createdAt).toLocaleDateString("en-IN")}
           </span>
         ),
@@ -138,18 +171,8 @@ export default function Subscriptions() {
         header: "Mode",
         align: "center",
         render: (r) => (
-          <div className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border border-white/15 bg-white/5">
-            {r.billingMode === "SCHOOL_PAID" ? (
-              <>
-                <ToggleRight className="w-3.5 h-3.5 text-lime-300" />
-                <span className="text-white/80">School Paid</span>
-              </>
-            ) : (
-              <>
-                <ToggleLeft className="w-3.5 h-3.5 text-amber-300" />
-                <span className="text-white/80">Parent Subscription</span>
-              </>
-            )}
+          <div className="flex justify-center">
+            <ModeBadge mode={r.billingMode} />
           </div>
         ),
       },
@@ -158,48 +181,42 @@ export default function Subscriptions() {
         align: "center",
         render: (r) =>
           r.billingMode === "PARENT_SUBSCRIPTION" ? (
-            <span className="text-white text-sm">
+            <span className="text-white text-sm whitespace-nowrap">
               {typeof r.parentSubscriptionAmount === "number"
                 ? `₹${r.parentSubscriptionAmount.toLocaleString("en-IN")}`
-                : "-"}
+                : "—"}
             </span>
           ) : (
-            <span className="text-white/40 text-xs">Included (school paid)</span>
+            <span className="text-white/40 text-xs">Included</span>
           ),
       },
       {
-        header: "Trial Days",
+        header: "Trial",
         align: "center",
         render: (r) =>
           r.billingMode === "PARENT_SUBSCRIPTION" ? (
-            <span className="text-white">{r.parentSubscriptionTrialDays ?? 0}</span>
+            <span className="text-white tabular-nums">{r.parentSubscriptionTrialDays ?? 0}d</span>
           ) : (
-            <span className="text-white/40 text-xs">-</span>
+            <span className="text-white/40 text-xs">—</span>
           ),
       },
       {
         header: "Status",
         align: "center",
         render: (r) => (
-          <span
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
-              r.isActive
-                ? "bg-emerald-500/10 border-emerald-400/40 text-emerald-300"
-                : "bg-red-500/10 border-red-400/40 text-red-300"
-            }`}
-          >
-            {r.isActive ? "Active" : "Deactivated"}
-          </span>
+          <div className="flex justify-center">
+            <StatusPill active={r.isActive} />
+          </div>
         ),
       },
       {
-        header: "Actions",
+        header: "",
         align: "center",
         render: (r) => (
           <button
             type="button"
             onClick={() => setEditing(r)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-xs text-white hover:bg-white/10"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-xs text-white hover:bg-white/10 whitespace-nowrap"
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit
@@ -223,61 +240,149 @@ export default function Subscriptions() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto flex flex-col items-center">
-      <div className="w-full min-h-screen space-y-4 sm:space-y-6 px-3 sm:px-4 md:px-6">
+    <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto flex flex-col">
+      <div className="w-full min-h-0 space-y-4 sm:space-y-6 px-0 sm:px-0">
         <PageHeader
           title="Subscriptions"
-          subtitle="Manage SaaS subscription mode, pricing, and activation for each school"
+          subtitle="SaaS mode, pricing, and activation per school"
+          className="rounded-2xl sm:rounded-3xl"
           rightSlot={
-            <div className="w-full max-w-sm">
+            <div className="w-full md:max-w-sm lg:max-w-md">
               <SearchInput
                 value={search}
-                onChange={(v) => {
-                  setSearch(v);
-                  void fetchSchools(v);
-                }}
-                placeholder="Search school"
+                onChange={setSearch}
+                icon={Search}
+                iconPosition="right"
+                placeholder="Search by school name…"
+                variant="glass"
               />
             </div>
           }
         />
 
         {error && (
-          <div className="text-red-400 text-sm py-2">
+          <div className="text-red-400 text-sm py-1 px-1" role="alert">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-16">
             <Spinner />
           </div>
         ) : (
-          <TableLayout
-            columns={columns}
-            data={rows}
-            emptyText="No schools found"
-            rowKey={(row) => row.id}
-          />
+          <>
+            {/* Mobile & tablet: cards */}
+            <div className="lg:hidden space-y-3">
+              {rows.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/3 px-4 py-12 text-center text-sm text-white/50">
+                  No schools match your search.
+                </div>
+              ) : (
+                rows.map((r) => (
+                  <article
+                    key={r.id}
+                    className="rounded-2xl border border-white/10 bg-white/4 backdrop-blur-sm p-4 shadow-lg shadow-black/20"
+                  >
+                    <div className="flex gap-3 justify-between items-start min-w-0">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base font-semibold text-white leading-snug wrap-break-word">
+                          {r.name}
+                        </h3>
+                        <p className="text-xs text-white/45 mt-0.5 line-clamp-2">
+                          {r.location || "No location"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditing(r)}
+                        className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-white/15 bg-white/10 text-xs font-medium text-white hover:bg-white/15 active:scale-[0.98] transition"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <ModeBadge mode={r.billingMode} />
+                      <StatusPill active={r.isActive} />
+                    </div>
+
+                    <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:text-sm border-t border-white/10 pt-3">
+                      <div>
+                        <dt className="text-white/45">Created</dt>
+                        <dd className="text-white/85 mt-0.5 tabular-nums">
+                          {new Date(r.createdAt).toLocaleDateString("en-IN")}
+                        </dd>
+                      </div>
+                      <div className="text-right sm:text-left">
+                        <dt className="text-white/45">Trial</dt>
+                        <dd className="text-white/85 mt-0.5">
+                          {r.billingMode === "PARENT_SUBSCRIPTION"
+                            ? `${r.parentSubscriptionTrialDays ?? 0} days`
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div className="col-span-2">
+                        <dt className="text-white/45">Amount (₹ / year)</dt>
+                        <dd className="text-white mt-0.5 font-medium">
+                          {r.billingMode === "PARENT_SUBSCRIPTION" ? (
+                            typeof r.parentSubscriptionAmount === "number" ? (
+                              <span className="text-lime-200/90">
+                                ₹{r.parentSubscriptionAmount.toLocaleString("en-IN")}
+                              </span>
+                            ) : (
+                              <span className="text-white/50">Not set</span>
+                            )
+                          ) : (
+                            <span className="text-white/50">Included in school plan</span>
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))
+              )}
+            </div>
+
+            {/* Desktop: wide table */}
+            <div className="hidden lg:block">
+              <TableLayout
+                columns={columns}
+                data={rows}
+                emptyText="No schools match your search."
+                rowKey={(row) => row.id}
+                tableClassName="table-auto w-full min-w-[960px]"
+                tdClassName="whitespace-normal align-middle"
+              />
+            </div>
+          </>
         )}
 
-        <div className="mt-4 text-xs text-white/40 flex items-center gap-2">
-          <CreditCard className="w-3.5 h-3.5" />
-          <span>
+        <div className="mt-2 sm:mt-4 text-xs text-white/40 flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 rounded-xl border border-white/5 bg-white/2 px-3 py-3 sm:px-4">
+          <CreditCard className="w-4 h-4 shrink-0 text-white/35 mt-0.5" aria-hidden />
+          <p className="leading-relaxed">
             Deactivating a school locks access for its admins, teachers, and parents. They will see a
             Timelly notice to contact support when trying to use the portal.
-          </span>
+          </p>
         </div>
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-3">
-          <div className="w-full max-w-lg rounded-2xl bg-[#020617] border border-white/10 p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Edit Subscription</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/65 backdrop-blur-sm p-0 sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="subscription-edit-title"
+        >
+          <div className="w-full sm:max-w-lg max-h-[min(92dvh,720px)] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-2xl bg-[#020617] border border-white/10 border-b-0 sm:border-b p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between gap-3 sticky top-0 bg-[#020617] pt-0 pb-2 -mt-1 z-1">
+              <h2 id="subscription-edit-title" className="text-lg font-semibold text-white">
+                Edit subscription
+              </h2>
               <button
                 type="button"
-                className="text-white/60 hover:text-white text-sm"
+                className="text-white/60 hover:text-white text-sm shrink-0 py-1 px-2 -mr-2"
                 onClick={() => setEditing(null)}
               >
                 Close
@@ -291,13 +396,13 @@ export default function Subscriptions() {
                   type="text"
                   value={editing.name}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  className="w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-lime-400/60"
+                  className="w-full min-h-11 rounded-xl bg-black/40 border border-white/15 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lime-400/40"
                 />
               </div>
 
               <div>
                 <p className="text-xs text-white/60 mb-1">Subscription mode</p>
-                <div className="inline-flex rounded-xl bg-white/5 border border-white/10 p-1">
+                <div className="flex flex-col sm:flex-row rounded-xl bg-white/5 border border-white/10 p-1 gap-1">
                   <button
                     type="button"
                     onClick={() =>
@@ -305,13 +410,13 @@ export default function Subscriptions() {
                         prev ? { ...prev, billingMode: "SCHOOL_PAID" } : prev
                       )
                     }
-                    className={`px-3 py-1.5 text-xs rounded-lg font-medium ${
+                    className={`flex-1 px-3 py-2.5 text-xs rounded-lg font-medium transition ${
                       editing.billingMode === "SCHOOL_PAID"
                         ? "bg-lime-400 text-black"
                         : "text-white/70 hover:bg-white/5"
                     }`}
                   >
-                    School Paid
+                    School paid
                   </button>
                   <button
                     type="button"
@@ -320,54 +425,52 @@ export default function Subscriptions() {
                         prev ? { ...prev, billingMode: "PARENT_SUBSCRIPTION" } : prev
                       )
                     }
-                    className={`ml-1 px-3 py-1.5 text-xs rounded-lg font-medium ${
+                    className={`flex-1 px-3 py-2.5 text-xs rounded-lg font-medium transition ${
                       editing.billingMode === "PARENT_SUBSCRIPTION"
                         ? "bg-lime-400 text-black"
                         : "text-white/70 hover:bg-white/5"
                     }`}
                   >
-                    Parent Subscription
+                    Parent subscription
                   </button>
                 </div>
               </div>
 
               {editing.billingMode === "PARENT_SUBSCRIPTION" && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-white/60 mb-1">Amount (₹ / year)</p>
-                      <input
-                        type="number"
-                        min={0}
-                        value={editing.parentSubscriptionAmount ?? ""}
-                        onChange={(e) =>
-                          setEditing({
-                            ...editing,
-                            parentSubscriptionAmount:
-                              e.target.value === "" ? null : Number(e.target.value),
-                          })
-                        }
-                        className="w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-lime-400/60"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-xs text-white/60 mb-1">Free trial days</p>
-                      <input
-                        type="number"
-                        min={0}
-                        value={editing.parentSubscriptionTrialDays ?? 0}
-                        onChange={(e) =>
-                          setEditing({
-                            ...editing,
-                            parentSubscriptionTrialDays:
-                              e.target.value === "" ? 0 : Number(e.target.value),
-                          })
-                        }
-                        className="w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-lime-400/60"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-white/60 mb-1">Amount (₹ / year)</p>
+                    <input
+                      type="number"
+                      min={0}
+                      value={editing.parentSubscriptionAmount ?? ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          parentSubscriptionAmount:
+                            e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                      className="w-full min-h-11 rounded-xl bg-black/40 border border-white/15 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lime-400/40"
+                    />
                   </div>
-                </>
+                  <div>
+                    <p className="text-xs text-white/60 mb-1">Free trial days</p>
+                    <input
+                      type="number"
+                      min={0}
+                      value={editing.parentSubscriptionTrialDays ?? 0}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          parentSubscriptionTrialDays:
+                            e.target.value === "" ? 0 : Number(e.target.value),
+                        })
+                      }
+                      className="w-full min-h-11 rounded-xl bg-black/40 border border-white/15 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lime-400/40"
+                    />
+                  </div>
+                </div>
               )}
 
               <div>
@@ -379,7 +482,7 @@ export default function Subscriptions() {
                       prev ? { ...prev, isActive: !prev.isActive } : prev
                     )
                   }
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition ${
                     editing.isActive
                       ? "bg-emerald-500/10 border-emerald-400/40 text-emerald-300"
                       : "bg-red-500/10 border-red-400/40 text-red-300"
@@ -390,11 +493,11 @@ export default function Subscriptions() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="px-4 py-2 rounded-lg border border-white/15 text-xs text-white/80 hover:bg-white/5"
+                className="w-full sm:w-auto px-4 py-3 sm:py-2 rounded-xl border border-white/15 text-sm text-white/80 hover:bg-white/5"
               >
                 Cancel
               </button>
@@ -402,9 +505,9 @@ export default function Subscriptions() {
                 type="button"
                 disabled={savingId === editing.id}
                 onClick={handleModalSave}
-                className="px-4 py-2 rounded-lg bg-lime-400 text-black text-xs font-semibold hover:bg-lime-300 disabled:opacity-60"
+                className="w-full sm:w-auto px-4 py-3 sm:py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:bg-lime-300 disabled:opacity-60"
               >
-                Save
+                Save changes
               </button>
             </div>
           </div>
@@ -413,4 +516,3 @@ export default function Subscriptions() {
     </main>
   );
 }
-

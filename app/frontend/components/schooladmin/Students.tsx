@@ -176,7 +176,6 @@ export default function StudentsManagementPage({ classes = [], reload }: Props) 
                 : undefined
             }
             showMobile={false}
-            forceTableOnMobile
             pagination={{
               page: safePage,
               totalPages,

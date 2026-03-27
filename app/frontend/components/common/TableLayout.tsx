@@ -14,7 +14,6 @@ type DataTableProps<T> = {
   tableTitle?: string;
   tableSubtitle?: string;
   showMobile?: boolean;
-  forceTableOnMobile?: boolean;
   container?: boolean;
   rounded?: boolean;
   containerClassName?: string;
@@ -47,7 +46,6 @@ function DataTable<T>({
   tableTitle,
   tableSubtitle,
   showMobile = true,
-  forceTableOnMobile = false,
   container = true,
   rounded = true,
   containerClassName = "",
@@ -90,7 +88,7 @@ function DataTable<T>({
   return (
     <div className="w-full space-y-4">
       <div
-        className={`${forceTableOnMobile ? "block" : "hidden sm:block"} ${
+        className={`block ${
           container
             ? `
               ${rounded ? "rounded-3xl" : "rounded-none"}
