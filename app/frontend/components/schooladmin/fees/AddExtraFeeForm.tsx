@@ -67,7 +67,7 @@ export default function AddExtraFeeForm({ classes, students, onSuccess }: AddExt
   const sections = Array.from(new Set(classes.map((c) => c.section).filter(Boolean))) as string[];
 
   return (
-    <section className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6">
+    <section className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-6">
       <h3 className="text-lg font-semibold mb-4">Add Extra Fees</h3>
       <p className="text-sm text-gray-400 mb-4">
         Add uniform, bus, library, or any custom fee for the entire school or a particular class.
@@ -160,7 +160,7 @@ export default function AddExtraFeeForm({ classes, students, onSuccess }: AddExt
               ]}
             />
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <PrimaryButton
               title={saving ? "Adding..." : "Add Fee"}
               loading={saving}
@@ -168,7 +168,7 @@ export default function AddExtraFeeForm({ classes, students, onSuccess }: AddExt
             />
             <button
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-xl border border-white/20"
+              className="rounded-xl border border-white/20 px-4 py-2"
             >
               Cancel
             </button>

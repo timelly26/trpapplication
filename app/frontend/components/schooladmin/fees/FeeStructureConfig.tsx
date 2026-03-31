@@ -75,17 +75,17 @@ export default function FeeStructureConfig({
   };
 
   return (
-    <section className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6">
+    <section className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-6">
       <h3 className="text-lg font-semibold mb-4">Global Fee Breakdown Configuration</h3>
       <p className="text-sm text-gray-400 mb-4">
         Manage base fee structures for different classes. Changes apply to all students in the
         selected class.
       </p>
-      <div className="flex flex-wrap gap-4 mb-4">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {structures.map((s) => (
           <div
             key={s.id}
-            className="bg-white/5 rounded-xl p-4 border border-white/10 min-w-[200px]"
+            className="rounded-xl border border-white/10 bg-white/5 p-4"
           >
             <div className="flex justify-between items-start">
               <div>
@@ -109,7 +109,7 @@ export default function FeeStructureConfig({
         ))}
         <button
           onClick={startNew}
-          className="bg-white/5 rounded-xl p-4 border border-dashed border-white/20 flex items-center gap-2 hover:bg-white/10"
+          className="flex items-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/5 p-4 hover:bg-white/10"
         >
           <Plus size={20} /> Add class structure
         </button>
@@ -128,7 +128,7 @@ export default function FeeStructureConfig({
           <div>
             <p className="text-sm font-medium mb-2">Fee Components</p>
             {components.map((c, i) => (
-              <div key={i} className="flex gap-2 mb-2 items-center">
+              <div key={i} className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
                   type="text"
                   value={c.name}
@@ -138,7 +138,7 @@ export default function FeeStructureConfig({
                     setComponents(n);
                   }}
                   placeholder="Component name"
-                  className="flex-1 rounded-lg bg-black/20 border border-white/10 px-3 py-2 text-sm"
+                  className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm"
                 />
                 <input
                   type="number"
@@ -148,7 +148,7 @@ export default function FeeStructureConfig({
                     n[i] = { ...n[i], amount: Number(e.target.value) };
                     setComponents(n);
                   }}
-                  className="w-24 rounded-lg bg-black/20 border border-white/10 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm sm:w-24"
                 />
                 <button
                   type="button"
@@ -168,7 +168,7 @@ export default function FeeStructureConfig({
               + Add component
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <PrimaryButton
               title={saving ? "Saving..." : "Save Structure"}
               loading={saving}

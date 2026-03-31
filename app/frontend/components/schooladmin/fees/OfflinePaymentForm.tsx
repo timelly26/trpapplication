@@ -272,7 +272,7 @@ export default function OfflinePaymentForm({
   }, [amount, dueByKey, dueHeads.length, headOptions, numericAmount, remainingFee, selectedHeads, studentId]);
 
   return (
-    <section className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6">
+    <section className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-6">
       <h3 className="text-lg font-semibold mb-4">Offline Payment Entry</h3>
       <p className="text-sm text-gray-400 mb-4">
         Record manual payments, cheque deposits, or bank transfers.
@@ -408,12 +408,12 @@ export default function OfflinePaymentForm({
               </div>
             ) : null}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {["Cash", "Cheque", "UPI", "Bank"].map((m) => (
               <button
                 key={m}
                 onClick={() => setPaymentMode(m)}
-                className={`px-3 py-1.5 rounded-lg text-sm ${
+                className={`rounded-lg px-3 py-1.5 text-sm ${
                   paymentMode === m ? "bg-emerald-500/30 text-emerald-400" : "bg-white/5"
                 }`}
               >
@@ -430,7 +430,7 @@ export default function OfflinePaymentForm({
               className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2.5 text-white"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <PrimaryButton
               title={saving ? "Saving..." : "Generate Receipt & Save"}
               loading={saving}
@@ -447,7 +447,7 @@ export default function OfflinePaymentForm({
                 setRefNo("");
                 setPaymentMode("Cash");
               }}
-              className="px-4 py-2 rounded-xl border border-white/20"
+              className="rounded-xl border border-white/20 px-4 py-2"
             >
               Cancel
             </button>

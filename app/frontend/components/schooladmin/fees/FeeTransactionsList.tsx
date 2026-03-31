@@ -168,7 +168,7 @@ export default function FeeTransactionsList({ students: _students, onSuccess }: 
   }, [transactions, selectedClass, selectedSection, selectedYear, studentSearch]);
 
   return (
-    <section className="w-full bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6">
+    <section className="w-full rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-6">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <RotateCcw className="w-5 h-5 text-amber-400" />
         Fee Transactions & Refunds
@@ -176,7 +176,7 @@ export default function FeeTransactionsList({ students: _students, onSuccess }: 
       <p className="text-sm text-gray-400 mb-4">
         View successful payments and process refunds when needed.
       </p>
-      <div className="w-full rounded-2xl border border-white/10 bg-white/5 p-4 mb-5">
+      <div className="mb-5 w-full rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <div>
             <SearchInput
@@ -232,7 +232,80 @@ export default function FeeTransactionsList({ students: _students, onSuccess }: 
       ) : filteredTransactions.length === 0 ? (
         <div className="py-8 text-center text-gray-400">No transactions found</div>
       ) : (
-        <div className="overflow-x-auto -mx-1">
+        <>
+          <div className="space-y-3 sm:hidden">
+            {filteredTransactions.map((t) => (
+              <div key={t.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
+                <button
+                  type="button"
+                  className="text-left text-base font-semibold text-white underline-offset-2 hover:underline"
+                  onMouseEnter={() => router.prefetch(schoolAdminStudentDetailsFeesUrl(t.student.id))}
+                  onClick={() => router.push(schoolAdminStudentDetailsFeesUrl(t.student.id))}
+                >
+                  {t.student.user?.name || t.student.admissionNumber || "-"}
+                </button>
+                <div className="mt-3 space-y-2 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-gray-400">Date</span>
+                    <span className="text-right text-white">
+                      {new Date(t.createdAt).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-gray-400">Class</span>
+                    <span className="text-right text-white">
+                      {t.student.class
+                        ? `${t.student.class.name}${t.student.class.section ? `-${t.student.class.section}` : ""}`
+                        : "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-gray-400">Gateway</span>
+                    <div className="text-right text-gray-300">
+                      <div>{t.gateway}</div>
+                      {t.hyperpgStatus ? (
+                        <div className="text-xs text-gray-500">
+                          {t.hyperpgStatus}
+                          {typeof t.hyperpgStatusId === "number" ? ` (${t.hyperpgStatusId})` : ""}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-gray-400">Amount</span>
+                    <span className="text-emerald-400">₹{t.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-gray-400">Refunded</span>
+                    {t.refundable < t.amount ? (
+                      <span className="text-amber-400">
+                        ₹{(t.amount - t.refundable).toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
+                  </div>
+                  <div className="pt-2">
+                    {t.refundable > 0 ? (
+                      <button
+                        onClick={() => setRefundTarget(t)}
+                        className="w-full rounded-lg bg-amber-500/20 px-3 py-2 text-xs font-medium text-amber-400 hover:bg-amber-500/30"
+                      >
+                        Refund
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-500">Full refund</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="-mx-4 hidden overflow-x-auto px-4 sm:block sm:mx-0 sm:px-0">
           <table className="w-full text-sm min-w-[480px]">
             <thead>
               <tr className="text-left text-gray-400 border-b border-white/10">
@@ -308,7 +381,8 @@ export default function FeeTransactionsList({ students: _students, onSuccess }: 
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
 
       <RefundModal

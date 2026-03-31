@@ -67,8 +67,8 @@ export default function FeesTab() {
   }
 
   return (
-    <div className="min-h-screen text-white overflow-x-hidden w-full">
-      <div className="w-full space-y-6 px-3 sm:px-4 md:px-6">
+    <div className="min-h-screen w-full overflow-x-hidden text-white">
+      <div className="w-full space-y-4 px-3 pb-6 sm:space-y-6 sm:px-4 md:px-6">
         <PageHeader
           title="Fees Management"
           subtitle="Track and manage student fee payments with detailed breakdowns"
@@ -76,7 +76,7 @@ export default function FeesTab() {
 
         <FeeStatCards stats={stats} />
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
           <OfflinePaymentForm
             classes={classes}
             structures={structures}
