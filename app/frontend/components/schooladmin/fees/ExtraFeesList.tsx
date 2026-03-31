@@ -99,10 +99,100 @@ export default function ExtraFeesList({
   if (extraFees.length === 0) return null;
 
   return (
-    <section className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6">
+    <section className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-6">
       <h3 className="text-lg font-semibold mb-4">All Extra Fees</h3>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="space-y-3 sm:hidden">
+        {extraFees.map((ef) => (
+          <div key={ef.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                {editingId === ef.id ? (
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 text-sm"
+                  />
+                ) : (
+                  <div className="break-words text-white">{ef.name}</div>
+                )}
+              </div>
+              <div className="shrink-0">
+                {editingId === ef.id ? (
+                  <input
+                    type="number"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="w-24 rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 text-sm"
+                  />
+                ) : (
+                  <span className="text-white">₹{ef.amount.toLocaleString()}</span>
+                )}
+              </div>
+            </div>
+            <div
+              className={`mt-3 text-sm text-gray-400 ${
+                ef.targetType === "STUDENT" && ef.targetStudentId
+                  ? "cursor-pointer select-none underline-offset-2 hover:text-gray-200 hover:underline"
+                  : ""
+              }`}
+              onMouseEnter={() => {
+                if (ef.targetType === "STUDENT" && ef.targetStudentId) {
+                  router.prefetch(schoolAdminStudentDetailsFeesUrl(ef.targetStudentId));
+                }
+              }}
+              onClick={() => {
+                if (ef.targetType === "STUDENT" && ef.targetStudentId) {
+                  router.push(schoolAdminStudentDetailsFeesUrl(ef.targetStudentId));
+                }
+              }}
+            >
+              Applies to: {targetLabel(ef, classes, students)}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {editingId === ef.id ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleUpdate}
+                    className="rounded-lg bg-lime-500/20 px-3 py-1.5 text-xs text-lime-400 hover:bg-lime-500/30"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(null)}
+                    className="rounded-lg border border-white/20 px-3 py-1.5 text-xs"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => startEdit(ef)}
+                    className="rounded-lg p-2 hover:bg-white/10"
+                    title="Edit"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(ef)}
+                    className="rounded-lg p-2 text-red-400 hover:bg-red-500/20"
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="-mx-4 hidden overflow-x-auto px-4 sm:block sm:mx-0 sm:px-0">
+        <table className="min-w-[560px] w-full text-sm">
           <thead>
             <tr className="text-left text-gray-400 border-b border-white/10">
               <th className="py-3">Name</th>
