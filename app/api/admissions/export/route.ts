@@ -6,6 +6,22 @@ import { assertCanManageAdmissions, getSessionSchoolId } from "../_utils";
 import * as XLSX from "xlsx";
 import { emailLocalPartFromFullName, normalizeEmailDomain, schoolDomainFromName } from "@/lib/schoolEmail";
 
+function formatDate(value: Date | null | undefined) {
+  if (!value) return "";
+  return value.toISOString().slice(0, 10);
+}
+
+function formatGrade(value: string) {
+  return value.replace(/^GRADE_/i, "Grade ").replace(/_/g, " ");
+}
+
+function formatBoardingType(value: string) {
+  return value
+    .split("_")
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -61,21 +77,41 @@ export async function GET(req: Request) {
       where,
       orderBy: { createdAt: "desc" },
       select: {
+        applicationNo: true,
+        fedenaNo: true,
+        admissionNo: true,
+        gradeSought: true,
+        boardingType: true,
+        rollNo: true,
         firstName: true,
         middleName: true,
         lastName: true,
-        parentName: true,
         aadharNo: true,
         gender: true,
         dateOfBirth: true,
+        firstLanguage: true,
         previousSchoolName: true,
+        previousSchoolAddress: true,
         className: true,
         section: true,
         class: { select: { name: true, section: true } },
         totalFee: true,
         discountPercent: true,
+        nationality: true,
+        languagesAtHome: true,
+        caste: true,
+        religion: true,
+        parentName: true,
+        parentOccupation: true,
+        officeAddress: true,
         parentPhone: true,
         parentEmail: true,
+        parentAadharNo: true,
+        parentWhatsapp: true,
+        bankAccountNo: true,
+        emergencyFatherNo: true,
+        emergencyMotherNo: true,
+        emergencyGuardianNo: true,
         houseNo: true,
         street: true,
         city: true,
@@ -87,13 +123,53 @@ export async function GET(req: Request) {
     });
 
     const data = rows.map((r) => ({
-      // Match /api/student/bulk-upload expected headers
+      // Full admission export fields
+      "Application No": r.applicationNo,
+      "Fedena No": r.fedenaNo ?? "",
+      "Admission No": r.admissionNo ?? "",
+      "Grade Sought": formatGrade(r.gradeSought),
+      "Boarding Type": formatBoardingType(r.boardingType),
+      Class: r.class?.name ?? r.className ?? "",
+      Section: r.class?.section ?? r.section ?? "",
+      "First Name": r.firstName,
+      "Middle Name": r.middleName ?? "",
+      "Last Name": r.lastName,
+      Gender: r.gender === "MALE" ? "Male" : "Female",
+      "Date of Birth": formatDate(r.dateOfBirth),
+      "Aadhar No": r.aadharNo,
+      "First Language": r.firstLanguage,
+      "Total Fee": r.totalFee ?? "",
+      "Discount %": r.discountPercent ?? 0,
+      Nationality: r.nationality,
+      "Languages at Home": r.languagesAtHome,
+      Caste: r.caste ?? "",
+      Religion: r.religion ?? "",
+      "House No": r.houseNo,
+      Street: r.street,
+      City: r.city,
+      Town: r.town ?? "",
+      State: r.state,
+      "Pin Code": r.pinCode,
+      "Parent Name": r.parentName,
+      Occupation: r.parentOccupation,
+      "Office Address": r.officeAddress,
+      "Parent Phone": r.parentPhone,
+      "Parent Email": r.parentEmail,
+      "Parent Aadhar No": r.parentAadharNo,
+      WhatsApp: r.parentWhatsapp,
+      "Bank Account No": r.bankAccountNo,
+      "Previous School Name": r.previousSchoolName,
+      "Previous School Address": r.previousSchoolAddress,
+      "Father No": r.emergencyFatherNo,
+      "Mother No": r.emergencyMotherNo,
+      "Guardian No": r.emergencyGuardianNo,
+      // Keep compatibility columns so this export can still be used in student bulk upload
       name: `${r.firstName} ${r.middleName ? `${r.middleName} ` : ""}${r.lastName}`.trim(),
       fatherName: r.parentName,
-      rollNo: "",
+      rollNo: r.rollNo ?? "",
       aadhaarNo: r.aadharNo,
       gender: r.gender === "MALE" ? "Male" : "Female",
-      dob: r.dateOfBirth.toISOString().slice(0, 10),
+      dob: formatDate(r.dateOfBirth),
       previousSchool: r.previousSchoolName,
       class: r.class?.name ?? r.className ?? "",
       section: r.class?.section ?? r.section ?? "",
@@ -103,7 +179,7 @@ export async function GET(req: Request) {
       email: `${emailLocalPartFromFullName(
         `${r.firstName} ${r.middleName ? `${r.middleName} ` : ""}${r.lastName}`.trim()
       )}@${emailDomain}`,
-      password: r.dateOfBirth.toISOString().split("T")[0].replace(/-/g, ""),
+      password: formatDate(r.dateOfBirth).replace(/-/g, ""),
       address: `${r.houseNo}, ${r.street}, ${r.town ? `${r.town}, ` : ""}${r.city}, ${r.state} - ${r.pinCode}`,
     }));
 

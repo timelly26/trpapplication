@@ -9,12 +9,12 @@ export default function UploadCSVModal({ classId, onClose, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleDownloadTemplate = () => {
-    // CSV/Excel template matching /api/student/bulk-upload expected columns.
-    // Required: name, fatherName, phoneNo (10 digits), aadhaarNo (12 digits), dob (YYYY-MM-DD), totalFee, discountPercent (0-100).
-    // Optional: rollNo, gender, previousSchool, class, section, email, address.
-    const csvContent = `name,fatherName,rollNo,aadhaarNo,gender,dob,previousSchool,class,section,totalFee,discountPercent,phoneNo,email,address
-Rahul Sharma,Rajesh Sharma,STU001,123412341234,Male,2015-06-15,Little Stars School,CSE,A,30000,10,9876543210,parent1@example.com,"123, MG Road, Delhi"
-Anita Verma,Sunil Verma,STU002,567856785678,Female,2014-09-20,Happy Kids School,CSE,A,28000,0,9876501234,parent2@example.com,"45, Park Street, Mumbai"`;
+    // Template aligned with the admission export format.
+    // Parent Email is optional. If empty, email becomes <student-name>@<school-domain>.
+    // Password is auto-generated from DOB in YYYYMMDD format.
+    const csvContent = `Application No,Fedena No,Admission No,Grade Sought,Boarding Type,Class,Section,First Name,Middle Name,Last Name,Gender,Date of Birth,Aadhar No,First Language,Total Fee,Discount %,Nationality,Languages at Home,Caste,Religion,House No,Street,City,Town,State,Pin Code,Parent Name,Occupation,Office Address,Parent Phone,Parent Email,Parent Aadhar No,WhatsApp,Bank Account No,Previous School Name,Previous School Address,Father No,Mother No,Guardian No
+APP/2026/0001,,ADM/2026/001,Grade 1,Semi Residential,Class 1,A,Rahul,,Sharma,Male,2015-06-15,123412341234,English,30000,10,Indian,Hindi,,,12,MG Road,Delhi,,Delhi,110001,Rajesh Sharma,Engineer,Delhi Office,9876543210,,123412340000,9876543210,1234567890,Little Stars School,Old Delhi,9876543210,9876543211,9876543212
+APP/2026/0002,,ADM/2026/002,Grade 1,Semi Residential,Class 1,A,Anita,,Verma,Female,2014-09-20,567856785678,English,28000,0,Indian,English,,,45,Park Street,Mumbai,,Maharashtra,400001,Sunil Verma,Manager,Mumbai Office,9876501234,parent2@example.com,567856780000,9876501234,2233445566,Happy Kids School,Mumbai West,9876501234,9876501235,9876501236`;
 
     const element = document.createElement("a");
     element.setAttribute(
@@ -52,6 +52,31 @@ Anita Verma,Sunil Verma,STU002,567856785678,Female,2014-09-20,Happy Kids School,
       if (!uploadRes.ok) {
         toast.error(uploadData.message || "Bulk upload failed");
         return;
+      }
+
+      if (!uploadData.createdCount) {
+        const firstError =
+          Array.isArray(uploadData.failed) && uploadData.failed.length > 0
+            ? uploadData.failed[0]
+            : null;
+        toast.error(
+          firstError?.error
+            ? `Upload failed at row ${firstError.row}: ${firstError.error}`
+            : "No students were created from the uploaded file"
+        );
+        return;
+      }
+
+      if (uploadData.failedCount > 0) {
+        const firstError =
+          Array.isArray(uploadData.failed) && uploadData.failed.length > 0
+            ? uploadData.failed[0]
+            : null;
+        toast.error(
+          firstError?.error
+            ? `${uploadData.createdCount} created, ${uploadData.failedCount} failed. First error at row ${firstError.row}: ${firstError.error}`
+            : `${uploadData.createdCount} created, ${uploadData.failedCount} failed`
+        );
       }
 
       /* ================= 2.FETCH UNASSIGNED STUDENTS (FIX) ================= */
@@ -122,15 +147,16 @@ Anita Verma,Sunil Verma,STU002,567856785678,Female,2014-09-20,Happy Kids School,
       <div className="bg-white p-6 rounded-xl w-[400px]">
         <h3 className="font-semibold mb-2">Upload Students CSV / Excel</h3>
         <p className="text-xs text-gray-500 mb-3">
-          Required columns: <span className="font-medium">name</span>,{" "}
-          <span className="font-medium">fatherName</span>,{" "}
-          <span className="font-medium">phoneNo</span>,{" "}
-          <span className="font-medium">aadhaarNo</span>,{" "}
-          <span className="font-medium">dob</span>. Optional:{" "}
-          <span className="font-medium">address</span>,{" "}
-          <span className="font-medium">totalFee</span>,{" "}
-          <span className="font-medium">discountPercent</span>. DOB format:
-          YYYY-MM-DD.
+          Upload the same Excel/CSV format used by the admission export. Required
+          fields include <span className="font-medium">First Name</span>,{" "}
+          <span className="font-medium">Last Name</span>,{" "}
+          <span className="font-medium">Parent Name</span>,{" "}
+          <span className="font-medium">Parent Phone</span>,{" "}
+          <span className="font-medium">Aadhar No</span>, and{" "}
+          <span className="font-medium">Date of Birth</span>. If{" "}
+          <span className="font-medium">Parent Email</span> is empty, the system
+          generates `studentname@schoolprefix`. Password is the DOB in
+          `YYYYMMDD` format.
         </p>
 
         <div className="flex flex-col gap-2">
