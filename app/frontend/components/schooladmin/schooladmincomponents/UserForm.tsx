@@ -9,6 +9,7 @@ import AllowedFeatureToggle from "./AllowedFeatureToggle";
 import RoleSelector from "./RoleSelector";
 import { Permission } from "@/app/frontend/enums/permissions";
 import Spinner from "../../common/Spinner";
+import { validateUserForm, type UserFormErrors } from "./userFormValidation";
 
 interface UserFormData {
   name: string;
@@ -59,6 +60,7 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
   const [loading, setLoading] = useState(!!userId && !initialData);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<UserFormErrors>({});
   const [success, setSuccess] = useState(false);
   const [schoolEmailDomain, setSchoolEmailDomain] = useState<string | null>(null);
   const [emailSettingsLoading, setEmailSettingsLoading] = useState(false);
@@ -175,9 +177,16 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
     };
   }, []);
 
-  const handleChange = (field: keyof UserFormData, value: any) => {
+  const handleChange = (field: keyof UserFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError(null);
+    setFieldErrors((prev) => {
+      const key = field as keyof UserFormErrors;
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   const handleFeatureToggle = (feature: string) => {
@@ -187,25 +196,23 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
         ? prev.allowedFeatures.filter((f) => f !== feature)
         : [...prev.allowedFeatures, feature],
     }));
+    setFieldErrors((prev) => {
+      if (!prev.allowedFeatures) return prev;
+      const next = { ...prev };
+      delete next.allowedFeatures;
+      return next;
+    });
+    setError(null);
   };
 
   const validateForm = (): boolean => {
-    if (!formData.name.trim()) {
-      setError("Full name is required");
+    const errs = validateUserForm(formData, mode);
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      setError("Please fix the highlighted fields below.");
       return false;
     }
-    if (mode === "create" && !formData.password) {
-      setError("Password is required");
-      return false;
-    }
-    if (formData.password && formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return false;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return false;
-    }
+    setError(null);
     return true;
   };
 
@@ -262,6 +269,7 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
         router.push(`?${params.toString()}`);
       }, 1500);
     } catch (err) {
+      setFieldErrors({});
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setSubmitting(false);
@@ -303,7 +311,26 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
           <div>
             <RoleSelector
               value={formData.role}
-              onChange={(role) => handleChange("role", role)}
+              onChange={(role) => {
+                handleChange("role", role);
+                setFieldErrors((prev) => {
+                  const next = { ...prev };
+                  (
+                    [
+                      "subjects",
+                      "teacherId",
+                      "qualification",
+                      "experience",
+                      "joiningDate",
+                      "mobile",
+                      "address",
+                    ] as const
+                  ).forEach((k) => {
+                    delete next[k];
+                  });
+                  return next;
+                });
+              }}
             />
           </div>
 
@@ -316,6 +343,7 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
               placeholder="Enter full name"
               icon={<User className="w-4 h-4" />}
               required
+              error={fieldErrors.name}
             />
 
             <InputField
@@ -324,6 +352,7 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
               onChange={(v) => handleChange("designation", v)}
               placeholder="e.g. Senior Teacher"
               icon={<Briefcase className="w-4 h-4" />}
+              error={fieldErrors.designation}
             />
 
             <div className="md:col-span-2">
@@ -336,10 +365,12 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
               label={`Password ${mode === "create" ? "" : "(Leave blank to keep unchanged)"}`}
               value={formData.password || ""}
               onChange={(v) => handleChange("password", v)}
-              placeholder="Enter password"
+              placeholder="Min 8 chars, letter + number"
               icon={<Lock className="w-4 h-4" />}
               type="password"
               required={mode === "create"}
+              autoComplete="new-password"
+              error={fieldErrors.password}
             />
 
             {formData.password && (
@@ -351,6 +382,8 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
                 icon={<Lock className="w-4 h-4" />}
                 type="password"
                 required
+                autoComplete="new-password"
+                error={fieldErrors.confirmPassword}
               />
             )}
           </div>
@@ -371,12 +404,15 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
                 <InputField
                   label="Teacher ID"
                   value={formData.teacherId || ""}
-                  onChange={(v) => handleChange("teacherId", v)}
+                  onChange={(v) => handleChange("teacherId", v.slice(0, 40))}
                   placeholder="e.g. TCH005"
                   icon={<User2 className="w-4 h-4" />}
+                  error={fieldErrors.teacherId}
                 />
                 <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1.5">Subject(s)</label>
+                  <label className="block text-xs font-medium text-white/70 mb-1.5">
+                    Subject(s) <span className="text-red-400">*</span>
+                  </label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {(formData.subjects || []).map((s) => (
                       <span
@@ -426,6 +462,11 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
                       Add
                     </button>
                   </div>
+                  {fieldErrors.subjects ? (
+                    <p className="text-xs text-red-400 mt-1.5" role="alert">
+                      {fieldErrors.subjects}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-white/70 mb-1.5">Assigned Classes</label>
@@ -464,16 +505,18 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
                 <InputField
                   label="Qualification"
                   value={formData.qualification || ""}
-                  onChange={(v) => handleChange("qualification", v)}
+                  onChange={(v) => handleChange("qualification", v.slice(0, 120))}
                   placeholder="e.g. M.Sc, B.Ed"
                   icon={<BookOpen className="w-4 h-4" />}
+                  error={fieldErrors.qualification}
                 />
                 <InputField
                   label="Experience"
                   value={formData.experience || ""}
-                  onChange={(v) => handleChange("experience", v)}
+                  onChange={(v) => handleChange("experience", v.slice(0, 80))}
                   placeholder="e.g. 5 Years"
                   icon={<Briefcase className="w-4 h-4" />}
+                  error={fieldErrors.experience}
                 />
                 <InputField
                   label="Joining Date"
@@ -481,6 +524,7 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
                   onChange={(v) => handleChange("joiningDate", v)}
                   placeholder="dd-mm-yyyy"
                   icon={<Calendar className="w-4 h-4" />}
+                  error={fieldErrors.joiningDate}
                 />
                 <div>
                   <label className="block text-xs font-medium text-white/70 mb-1.5">Status</label>
@@ -501,9 +545,12 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
                 <InputField
                   label="Phone Number"
                   value={formData.mobile || ""}
-                  onChange={(v) => handleChange("mobile", v)}
-                  placeholder="+91..."
+                  onChange={(v) => handleChange("mobile", v.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="10-digit mobile"
                   icon={<Phone className="w-4 h-4" />}
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  error={fieldErrors.mobile}
                 />
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-white/70 mb-1.5">Address</label>
@@ -513,12 +560,22 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
                     </span>
                     <textarea
                       value={formData.address || ""}
-                      onChange={(e) => handleChange("address", e.target.value)}
+                      onChange={(e) => handleChange("address", e.target.value.slice(0, 500))}
                       placeholder="Full Address"
                       rows={2}
-                      className="w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-lime-400/50 text-gray-400 resize-none"
+                      aria-invalid={Boolean(fieldErrors.address)}
+                      className={`w-full pl-11 pr-4 py-3 bg-black/20 rounded-xl focus:outline-none focus:ring-1 text-gray-400 resize-none ${
+                        fieldErrors.address
+                          ? "border border-red-500/60 focus:ring-red-400/40"
+                          : "border border-white/10 focus:ring-lime-400/50"
+                      }`}
                     />
                   </div>
+                  {fieldErrors.address ? (
+                    <p className="text-xs text-red-400 mt-1.5" role="alert">
+                      {fieldErrors.address}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -531,10 +588,18 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
           bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 h-full">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2"><Shield className="lucide lucide-shield w-5 h-5 text-lime-400" /> Access Control</h3>
+              <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
+                <Shield className="lucide lucide-shield w-5 h-5 text-lime-400" /> Access Control{" "}
+                <span className="text-red-400 text-sm font-normal">*</span>
+              </h3>
               <p className="text-[11px] text-white/50">
                 Choose which modules this user can access.
               </p>
+              {fieldErrors.allowedFeatures ? (
+                <p className="text-xs text-red-400 mt-2" role="alert">
+                  {fieldErrors.allowedFeatures}
+                </p>
+              ) : null}
             </div>
             <span className="text-[11px] font-medium text-lime-300 px-3 py-1 bg-lime-400/10 text-lime-400
              text-xs font-bold rounded-full border border-lime-400/20">
@@ -554,6 +619,13 @@ export default function UserForm({ mode = "create", initialData }: UserFormProps
                   ? []
                   : AVAILABLE_FEATURES_FOR_TEACHERS.map((f) => f.key),
               }));
+              setFieldErrors((prev) => {
+                if (!prev.allowedFeatures) return prev;
+                const next = { ...prev };
+                delete next.allowedFeatures;
+                return next;
+              });
+              setError(null);
             }}
           />
 

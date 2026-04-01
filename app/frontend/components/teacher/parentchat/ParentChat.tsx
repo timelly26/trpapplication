@@ -108,28 +108,28 @@ export default function TeacherParentChatTab() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto h-full flex flex-col gap-3 sm:gap-6 px-3 sm:px-0 pb-20 lg:pb-6 min-h-0 overflow-x-hidden overflow-y-auto">
+    <div className="max-w-7xl mx-auto h-full min-h-0 flex flex-col gap-3 sm:gap-6 px-3 sm:px-0 pb-20 lg:pb-6 overflow-hidden">
       <PageHeader
         title="Parent Communication"
         subtitle="Manage chat requests and conversations"
         compact
       />
 
-      <div className="flex flex-1 min-h-0 gap-3 sm:gap-6 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] flex-1 min-h-0 gap-3 sm:gap-6 overflow-hidden">
         {/* ================= Sidebar ================= */}
         <div
-          className={`glass-card rounded-xl sm:rounded-2xl flex flex-col overflow-hidden
+          className={`glass-card rounded-xl sm:rounded-2xl flex flex-col overflow-hidden min-h-0
           ${activeChat ? "hidden lg:flex" : "flex"}
-          w-full lg:w-96 min-h-[280px] lg:min-h-0`}
+          w-full min-h-[280px] lg:min-h-0`}
         >
           {/* Tabs */}
-          <div className="p-3 sm:p-4 flex flex-wrap gap-2 border-b border-white/10 -mb-px">
+          <div className="p-3 sm:p-4 flex gap-2 border-b border-white/10 -mb-px overflow-x-auto no-scrollbar">
             {(["all", "approved", "pending", "rejected", "ended"] as const).map(
               (tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs capitalize shrink-0 min-h-[40px] sm:min-h-0 touch-manipulation
+                  className={`px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs capitalize whitespace-nowrap shrink-0 min-h-[40px] sm:min-h-0 touch-manipulation
                     ${activeTab === tab
                       ? "bg-lime-500 text-black"
                       : "bg-white/5 text-gray-400 hover:bg-white/10 active:bg-white/15"
@@ -191,7 +191,7 @@ export default function TeacherParentChatTab() {
 
         {/* ================= Chat Window ================= */}
         <div
-          className={`flex-1 min-w-0 min-h-[300px] sm:min-h-0 glass-card rounded-xl sm:rounded-2xl overflow-hidden flex flex-col
+          className={`min-w-0 min-h-[300px] sm:min-h-0 glass-card rounded-xl sm:rounded-2xl overflow-hidden flex flex-col
           ${activeChat ? "flex" : "hidden lg:flex"}`}
         >
           {activeChat ? (

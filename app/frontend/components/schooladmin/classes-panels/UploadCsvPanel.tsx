@@ -6,9 +6,11 @@ import SuccessPopups from "../../common/SuccessPopUps";
 
 interface UploadCsvPanelProps {
   onCancel: () => void;
+  /** Called after a successful upload so the classes table can reload. */
+  onSuccess?: () => void;
 }
 
-export default function UploadCsvPanel({ onCancel }: UploadCsvPanelProps) {
+export default function UploadCsvPanel({ onCancel, onSuccess }: UploadCsvPanelProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -56,6 +58,7 @@ export default function UploadCsvPanel({ onCancel }: UploadCsvPanelProps) {
       );
       setShowSuccess(true);
       setFile(null);
+      onSuccess?.();
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }

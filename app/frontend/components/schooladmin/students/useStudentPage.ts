@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStudents } from "../../../hooks/useStudents";
 import { addStudent, assignStudentsToClass, updateStudent, deleteStudent as deleteStudentApi } from "../../../services/student.service";
 import { toast } from "../../../services/toast.service";
@@ -11,7 +12,7 @@ import {
   StudentFormState,
   StudentRow,
 } from "./types";
-import { toStudentForm } from "./utils";
+import { mergeStudentAfterEdit, toStudentForm } from "./utils";
 
 type Props = {
   classes?: ClassItem[];
@@ -89,9 +90,20 @@ const DEFAULT_FORM: StudentFormState = {
   emergencyGuardianNo: "",
 };
 
+const digitsOnly = (value: string) => value.replace(/\D/g, "");
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const validateForm = (
   form: StudentFormState,
-  options: { requireFees: boolean; requireAadhaar: boolean; requirePhone: boolean }
+  options: {
+    requireFees: boolean;
+    requireAadhaar: boolean;
+    requirePhone: boolean;
+    requireClass?: boolean;
+    requireGender?: boolean;
+    strictOptionalFormats?: boolean;
+  }
 ): StudentFormErrors => {
   const newErrors: StudentFormErrors = {};
 
@@ -103,39 +115,115 @@ const validateForm = (
     newErrors.fatherName = "Parent name must be at least 2 characters";
   }
 
-  if (options.requireAadhaar && !/^\d{12}$/.test(form.aadhaarNo)) {
-    newErrors.aadhaarNo = "Aadhaar number must be exactly 12 digits";
+  if (options.requireGender && !form.gender.trim()) {
+    newErrors.gender = "Please select gender";
   }
 
-  if (options.requirePhone && !/^\d{10}$/.test(form.phoneNo)) {
-    newErrors.phoneNo = "Phone number must be exactly 10 digits";
+  if (options.requireAadhaar) {
+    const a12 = digitsOnly(form.aadhaarNo);
+    if (a12.length !== 12) {
+      newErrors.aadhaarNo = "Aadhaar number must be exactly 12 digits";
+    }
   }
 
-  if (!form.dob || new Date(form.dob) >= new Date()) {
+  if (options.requirePhone) {
+    const p10 = digitsOnly(form.phoneNo);
+    if (p10.length !== 10) {
+      newErrors.phoneNo = "Contact number must be exactly 10 digits";
+    }
+  }
+
+  if (!form.dob || Number.isNaN(new Date(form.dob).getTime())) {
     newErrors.dob = "Please enter a valid date of birth";
+  } else if (new Date(form.dob) >= new Date()) {
+    newErrors.dob = "Date of birth must be in the past";
+  }
+
+  if (options.requireClass && !form.classId.trim()) {
+    newErrors.classId = "Please select a class";
   }
 
   if (options.requireFees) {
-    if (!form.totalFee || Number(form.totalFee) <= 0) {
+    const feeNum = Number(form.totalFee);
+    if (
+      !form.totalFee?.trim() ||
+      Number.isNaN(feeNum) ||
+      feeNum <= 0
+    ) {
       newErrors.totalFee = "Total fee must be a positive number";
     }
 
     if (
-      form.discountPercent &&
-      (Number(form.discountPercent) < 0 || Number(form.discountPercent) > 100)
+      form.discountPercent?.trim() &&
+      (Number.isNaN(Number(form.discountPercent)) ||
+        Number(form.discountPercent) < 0 ||
+        Number(form.discountPercent) > 100)
     ) {
       newErrors.discountPercent = "Discount must be between 0 and 100";
     }
   }
 
-  if (form.address && form.address.length < 5) {
-    newErrors.address = "Address must be at least 5 characters";
+  if (form.address.trim() && form.address.trim().length < 5) {
+    newErrors.address = "Address must be at least 5 characters when provided";
+  }
+
+  const roll = form.rollNo.trim();
+  if (roll.length > 40) {
+    newErrors.rollNo = "Student ID must be at most 40 characters";
+  }
+
+  if (options.strictOptionalFormats) {
+    const email = form.email.trim();
+    if (email && !EMAIL_REGEX.test(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    const pa = digitsOnly(form.parentAadharNo);
+    if (form.parentAadharNo.trim() && pa.length !== 12) {
+      newErrors.parentAadharNo = "Parent Aadhaar must be exactly 12 digits";
+    }
+
+    const pw = digitsOnly(form.parentWhatsapp);
+    if (form.parentWhatsapp.trim() && pw.length !== 10) {
+      newErrors.parentWhatsapp = "WhatsApp number must be exactly 10 digits";
+    }
+
+    const pin = digitsOnly(form.pinCode);
+    if (form.pinCode.trim() && pin.length !== 6) {
+      newErrors.pinCode = "PIN code must be exactly 6 digits";
+    }
+
+    const bank = form.bankAccountNo.replace(/\s/g, "");
+    if (bank && !/^\d{9,18}$/.test(bank)) {
+      newErrors.bankAccountNo = "Bank account number must be 9–18 digits";
+    }
+
+    const checkEmergency = (raw: string, key: keyof StudentFormState) => {
+      if (!raw.trim()) return;
+      const d = digitsOnly(raw);
+      if (d.length !== 10) {
+        newErrors[key] = "Must be exactly 10 digits";
+      }
+    };
+    checkEmergency(form.emergencyFatherNo, "emergencyFatherNo");
+    checkEmergency(form.emergencyMotherNo, "emergencyMotherNo");
+    checkEmergency(form.emergencyGuardianNo, "emergencyGuardianNo");
   }
 
   return newErrors;
 };
 
 export default function useStudentPage({ classes = [], reload }: Props) {
+  const router = useRouter();
+  const bumpAfterMutation = useCallback(() => {
+    reload?.();
+    try {
+      router.refresh();
+    } catch {
+      /* noop */
+    }
+  }, [reload, router]);
+
   const [availableClasses, setAvailableClasses] = useState<ClassItem[]>(
     classes.length ? classes : classesCache ?? []
   );
@@ -159,7 +247,14 @@ export default function useStudentPage({ classes = [], reload }: Props) {
     return match?.id ?? "";
   }, [availableClasses, selectedClass, selectedSection]);
 
-  const { students, loading, refresh } = useStudents(selectedClassIdForFetch);
+  const {
+    students,
+    loading,
+    refresh,
+    refreshSilent,
+    patchStudent,
+    removeStudent,
+  } = useStudents(selectedClassIdForFetch);
   const [allStudents, setAllStudents] = useState<StudentRow[]>([]);
   const [allLoading, setAllLoading] = useState(false);
 
@@ -219,17 +314,17 @@ export default function useStudentPage({ classes = [], reload }: Props) {
     }
   }, [availableClasses, selectedClass, selectedSection]);
 
-  const fetchAllStudents = async () => {
-    setAllLoading(true);
+  const fetchAllStudents = async (options?: { silent?: boolean }) => {
+    if (!options?.silent) setAllLoading(true);
     try {
-      const res = await fetch("/api/student/list");
+      const res = await fetch("/api/student/list", { cache: "no-store" });
       const data: StudentsListResponse = await res.json();
       if (!res.ok) return;
       setAllStudents(data.students || []);
     } catch {
       // ignore
     } finally {
-      setAllLoading(false);
+      if (!options?.silent) setAllLoading(false);
     }
   };
 
@@ -351,24 +446,26 @@ export default function useStudentPage({ classes = [], reload }: Props) {
       requireFees: true,
       requireAadhaar: true,
       requirePhone: true,
+      requireClass: true,
+      requireGender: true,
+      strictOptionalFormats: true,
     });
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    if (!form.classId) {
-      toast.error("Please select a class for this student");
-      return;
-    }
+    const aadhaarDigits = form.aadhaarNo.replace(/\D/g, "");
+    const phoneDigits = form.phoneNo.replace(/\D/g, "");
 
     try {
       setSaving(true);
       const res: Response = await addStudent({
-        name: form.name,
-        fatherName: form.fatherName,
-        motherName: form.motherName,
-        occupation: form.occupation,
-        aadhaarNo: form.aadhaarNo,
-        phoneNo: form.phoneNo,
+        name: form.name.trim(),
+        fatherName: form.fatherName.trim(),
+        motherName: form.motherName?.trim() || undefined,
+        occupation: form.occupation?.trim() || undefined,
+        aadhaarNo: aadhaarDigits,
+        phoneNo: phoneDigits,
+        email: form.email.trim() || undefined,
         dob: form.dob,
         classId: form.classId,
         address: form.address?.trim() || undefined,
@@ -379,6 +476,35 @@ export default function useStudentPage({ classes = [], reload }: Props) {
         rollNo: form.rollNo?.trim() || undefined,
         gender: form.gender?.trim() || undefined,
         previousSchool: form.previousSchool?.trim() || undefined,
+        previousSchoolAddress: form.previousSchoolAddress?.trim() || undefined,
+        officeAddress: form.officeAddress?.trim() || undefined,
+        parentAadharNo: form.parentAadharNo.trim()
+          ? digitsOnly(form.parentAadharNo)
+          : undefined,
+        parentWhatsapp: form.parentWhatsapp.trim()
+          ? digitsOnly(form.parentWhatsapp)
+          : undefined,
+        bankAccountNo: form.bankAccountNo.replace(/\s/g, "") || undefined,
+        houseNo: form.houseNo.trim() || undefined,
+        street: form.street.trim() || undefined,
+        city: form.city.trim() || undefined,
+        town: form.town.trim() || undefined,
+        state: form.state.trim() || undefined,
+        pinCode: form.pinCode.trim() ? digitsOnly(form.pinCode) : undefined,
+        firstLanguage: form.firstLanguage.trim() || undefined,
+        nationality: form.nationality.trim() || undefined,
+        languagesAtHome: form.languagesAtHome.trim() || undefined,
+        caste: form.caste.trim() || undefined,
+        religion: form.religion.trim() || undefined,
+        emergencyFatherNo: form.emergencyFatherNo.trim()
+          ? digitsOnly(form.emergencyFatherNo)
+          : undefined,
+        emergencyMotherNo: form.emergencyMotherNo.trim()
+          ? digitsOnly(form.emergencyMotherNo)
+          : undefined,
+        emergencyGuardianNo: form.emergencyGuardianNo.trim()
+          ? digitsOnly(form.emergencyGuardianNo)
+          : undefined,
       });
 
       const data = await res.json();
@@ -397,7 +523,7 @@ export default function useStudentPage({ classes = [], reload }: Props) {
       if (!selectedClass) {
         fetchAllStudents();
       }
-      reload?.();
+      bumpAfterMutation();
     } catch (e) {
       // api() already shows toast with server message on 4xx/5xx; only show generic on network/unknown errors
       if (!(e instanceof Error) || !e.message) {
@@ -447,7 +573,7 @@ export default function useStudentPage({ classes = [], reload }: Props) {
       if (!selectedClass) {
         fetchAllStudents();
       }
-      reload?.();
+      bumpAfterMutation();
       return {
         createdCount: uploadData.createdCount || 0,
         failedCount: uploadData.failedCount || 0,
@@ -506,11 +632,36 @@ export default function useStudentPage({ classes = [], reload }: Props) {
         toast.error(data.message || "Failed to update student");
         return;
       }
+
+      const resolvedClass = editForm.classId
+        ? availableClasses.find((c) => c.id === editForm.classId) ?? null
+        : null;
+      const updated = mergeStudentAfterEdit(editStudent, editForm, resolvedClass);
+      const updatedClassId = updated.class?.id;
+
+      const movedOutOfFilteredClass =
+        Boolean(selectedClassIdForFetch) &&
+        Boolean(updatedClassId) &&
+        updatedClassId !== selectedClassIdForFetch;
+
+      if (selectedClassIdForFetch) {
+        if (movedOutOfFilteredClass) {
+          removeStudent(editStudent.id);
+        } else {
+          patchStudent(editStudent.id, () => updated);
+        }
+      }
+
+      setAllStudents((prev) =>
+        prev.map((s) => (s.id === editStudent.id ? updated : s))
+      );
+
       toast.success("Student updated successfully");
       closeEdit();
-      refresh();
-      if (!selectedClassIdForFetch) fetchAllStudents();
-      reload?.();
+
+      void refreshSilent();
+      void fetchAllStudents({ silent: true });
+      bumpAfterMutation();
     } catch {
       toast.error("Failed to update student");
     } finally {
@@ -532,7 +683,7 @@ export default function useStudentPage({ classes = [], reload }: Props) {
       closeDelete();
       refresh();
       if (!selectedClassIdForFetch) fetchAllStudents();
-      reload?.();
+      bumpAfterMutation();
     } catch {
       toast.error("Failed to delete student");
     }

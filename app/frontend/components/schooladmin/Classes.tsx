@@ -20,6 +20,7 @@ import type { LucideIcon } from "lucide-react";
 import type { PDFPage } from "pdf-lib";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AddClassPanel from "./classes-panels/AddClassPanel";
 import AddSectionPanel from "./classes-panels/AddSectionPanel";
 import UploadCsvPanel from "./classes-panels/UploadCsvPanel";
@@ -34,6 +35,7 @@ import StatCard from "./StatCard";
 
 
 export default function SchoolAdminClassesTab() {
+  const router = useRouter();
   type ApiClassRow = {
     id: string;
     name?: string | null;
@@ -130,6 +132,15 @@ export default function SchoolAdminClassesTab() {
       setIsLoading(false);
     }
   }, []);
+
+  const refreshAfterMutation = useCallback(() => {
+    void loadClasses();
+    try {
+      router.refresh();
+    } catch {
+      /* noop */
+    }
+  }, [loadClasses, router]);
 
   useEffect(() => {
     let isActive = true;
@@ -598,7 +609,7 @@ export default function SchoolAdminClassesTab() {
             onCancel={() => setActiveAction("none")}
             onSuccess={() => {
               setActiveAction("none");
-              loadClasses();
+              refreshAfterMutation();
             }}
           />
         )}
@@ -607,12 +618,15 @@ export default function SchoolAdminClassesTab() {
             onCancel={() => setActiveAction("none")}
             onSuccess={() => {
               setActiveAction("none");
-              loadClasses();
+              refreshAfterMutation();
             }}
           />
         )}
         {activeAction === "csv" && (
-          <UploadCsvPanel onCancel={() => setActiveAction("none")} />
+          <UploadCsvPanel
+            onCancel={() => setActiveAction("none")}
+            onSuccess={refreshAfterMutation}
+          />
         )}
 
         {isLoading ? (
@@ -680,7 +694,7 @@ export default function SchoolAdminClassesTab() {
                       <EditClassPanel
                         row={row}
                         onClose={closePanel}
-                        onSuccess={loadClasses}
+                        onSuccess={refreshAfterMutation}
                       />
                     );
                   }
@@ -691,7 +705,7 @@ export default function SchoolAdminClassesTab() {
                         onCancel={closePanel}
                         onConfirm={() => {
                           closePanel();
-                          loadClasses();
+                          refreshAfterMutation();
                         }}
                       />
                     );
@@ -794,6 +808,7 @@ export default function SchoolAdminClassesTab() {
                           });
                           if (ok) {
                             closePanel();
+                            refreshAfterMutation();
                           }
                         }}
                         disabled={savingClassId === row.id}

@@ -1,4 +1,4 @@
-import { StudentFormState, StudentRow } from "./types";
+import { ClassItem, StudentFormState, StudentRow } from "./types";
 
 export const getInitials = (name?: string | null) => {
   if (!name) return "ST";
@@ -53,3 +53,37 @@ export const toStudentForm = (student: StudentRow): StudentFormState => ({
   emergencyMotherNo: "",
   emergencyGuardianNo: "",
 });
+
+/** Merge edit form values into a list row for immediate UI updates after a successful save. */
+export function mergeStudentAfterEdit(
+  prev: StudentRow,
+  form: StudentFormState,
+  resolvedClass: ClassItem | null
+): StudentRow {
+  const name = form.name.trim() || prev.user?.name || prev.name || "";
+
+  let nextClass = prev.class ?? null;
+  if (form.classId && resolvedClass?.id === form.classId) {
+    nextClass = {
+      id: resolvedClass.id,
+      name: resolvedClass.name,
+      section: resolvedClass.section || "",
+    };
+  }
+
+  return {
+    ...prev,
+    name,
+    rollNo: form.rollNo.trim() || prev.rollNo,
+    fatherName: form.fatherName.trim() || prev.fatherName,
+    motherName: form.motherName.trim() || prev.motherName,
+    occupation: form.occupation.trim() || prev.occupation,
+    phoneNo: form.phoneNo.trim() || prev.phoneNo,
+    address: form.address.trim() || prev.address,
+    gender: form.gender.trim() || prev.gender,
+    previousSchool: form.previousSchool.trim() || prev.previousSchool,
+    status: form.status || prev.status,
+    class: nextClass,
+    user: prev.user ? { ...prev.user, name } : prev.user,
+  };
+}

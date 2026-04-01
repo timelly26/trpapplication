@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import PageHeader from "../../common/PageHeader";
 import { SelectField } from "./MarksSelectField";
@@ -51,6 +52,7 @@ const DEFAULT_SUBJECTS = [
 const DEFAULT_EXAM_TYPES = ["TERM 1", "TERM 2", "FINAL"];
 
 export default function TeacherMarksTab() {
+  const router = useRouter();
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [examTypeOptions, setExamTypeOptions] =
     useState<string[]>(DEFAULT_EXAM_TYPES);
@@ -335,6 +337,11 @@ export default function TeacherMarksTab() {
       }
 
       await fetchStudentsAndMarks();
+      try {
+        router.refresh();
+      } catch {
+        /* noop */
+      }
     } finally {
       setSaveLoading(false);
     }

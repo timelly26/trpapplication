@@ -162,6 +162,11 @@ export default function AddSchool() {
         return;
       }
       setShowSuccess(true);
+      try {
+        router.refresh();
+      } catch {
+        /* noop */
+      }
     } catch (err) {
       if (err instanceof Error) {
         if (err.name === "AbortError") {
