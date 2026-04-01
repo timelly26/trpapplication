@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronDown, User, ChevronRight } from "lucide-react";
 import { SidebarItem } from "../../types/sidebar";
 import BrandLogo from "./TimellyLogo";
@@ -29,6 +29,7 @@ type Props = {
 
 export default function AppSidebar({ menuItems, profile, activeTab = "dashboard", onLogoutRequest, enableSwitchAccounts }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const [profileOpen, setProfileOpen] = useState(false);
   const [accounts, setAccounts] = useState<{ email: string; name: string; userId: string }[]>([]);
@@ -40,6 +41,30 @@ export default function AppSidebar({ menuItems, profile, activeTab = "dashboard"
   } | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const currentEmail = (session?.user as { email?: string })?.email ?? profile?.email;
+  const baseProfile = useMemo(
+    () => ({
+      name:
+        profile?.name && profile.name.trim()
+          ? profile.name
+          : session?.user?.name ?? "User",
+      subtitle: profile?.subtitle ?? session?.user?.role ?? "",
+      image:
+        profile?.image != null && profile.image !== ""
+          ? profile.image
+          : session?.user?.image ?? AVATAR_URL,
+      email: profile?.email ?? session?.user?.email ?? "",
+    }),
+    [
+      profile?.email,
+      profile?.image,
+      profile?.name,
+      profile?.subtitle,
+      session?.user?.email,
+      session?.user?.image,
+      session?.user?.name,
+      session?.user?.role,
+    ]
+  );
 
   // Save current user to recent logins when in student portal
   useEffect(() => {
@@ -81,80 +106,60 @@ export default function AppSidebar({ menuItems, profile, activeTab = "dashboard"
     });
   };
 
-  const refreshLiveProfile = useCallback(async () => {
-    try {
-      const res = await fetch("/api/user/me", { credentials: "include", cache: "no-store" });
-      const data = await res.json();
-      if (!res.ok || !data?.user) return;
-      const user = data.user as {
-        name?: string;
-        role?: string;
-        email?: string;
-        photoUrl?: string | null;
-      };
-      setLiveProfile({
-        name: user.name ?? profile?.name ?? session?.user?.name ?? "User",
-        subtitle: user.role ?? profile?.subtitle ?? session?.user?.role ?? "",
-        image: user.photoUrl ?? profile?.image ?? session?.user?.image ?? AVATAR_URL,
-        email: user.email ?? profile?.email ?? session?.user?.email ?? "",
-      });
-    } catch {
-      // ignore
-    }
-  }, [
-    profile?.email,
-    profile?.image,
-    profile?.name,
-    profile?.subtitle,
-    session?.user?.email,
-    session?.user?.image,
-    session?.user?.name,
-    session?.user?.role,
-  ]);
+  useEffect(() => {
+    setLiveProfile((prev) => ({
+      ...baseProfile,
+      ...prev,
+      name: prev?.name?.trim() ? prev.name : baseProfile.name,
+      subtitle: prev?.subtitle || baseProfile.subtitle,
+      image: prev?.image != null && prev.image !== "" ? prev.image : baseProfile.image,
+      email: prev?.email || baseProfile.email,
+    }));
+  }, [baseProfile]);
 
   useEffect(() => {
-    refreshLiveProfile();
-  }, [refreshLiveProfile]);
-
-  useEffect(() => {
-    const onUpdated = () => {
-      void refreshLiveProfile();
+    const onUpdated = (event?: Event) => {
+      const detail =
+        event && "detail" in event
+          ? (event as CustomEvent<{ photoUrl?: string | null; name?: string; email?: string }>).detail
+          : undefined;
+      setLiveProfile((prev) => ({
+        name: detail?.name ?? prev?.name ?? baseProfile.name,
+        subtitle: prev?.subtitle ?? baseProfile.subtitle,
+        image:
+          detail?.photoUrl !== undefined
+            ? detail.photoUrl || baseProfile.image
+            : prev?.image ?? baseProfile.image,
+        email: detail?.email ?? prev?.email ?? baseProfile.email,
+      }));
     };
     const onStorage = (e: StorageEvent) => {
       if (e.key === "timelly:profile-updated") {
-        void refreshLiveProfile();
-      }
-    };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") {
-        void refreshLiveProfile();
+        setLiveProfile((prev) => ({
+          name: prev?.name ?? baseProfile.name,
+          subtitle: prev?.subtitle ?? baseProfile.subtitle,
+          image: prev?.image ?? baseProfile.image,
+          email: prev?.email ?? baseProfile.email,
+        }));
       }
     };
     window.addEventListener("teacher-profile-updated", onUpdated);
     window.addEventListener("profile-updated", onUpdated);
-    window.addEventListener("focus", onUpdated);
     window.addEventListener("storage", onStorage);
-    document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.removeEventListener("teacher-profile-updated", onUpdated);
       window.removeEventListener("profile-updated", onUpdated);
-      window.removeEventListener("focus", onUpdated);
       window.removeEventListener("storage", onStorage);
-      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [refreshLiveProfile]);
+  }, [baseProfile]);
 
   const displayName = (liveProfile?.name && liveProfile.name.trim())
     ? liveProfile.name
-    : (profile?.name && profile.name.trim())
-      ? profile.name
-      : (session?.user?.name ?? "User");
-  const subtitle = liveProfile?.subtitle ?? profile?.subtitle ?? session?.user?.role ?? "";
+    : baseProfile.name;
+  const subtitle = liveProfile?.subtitle ?? baseProfile.subtitle;
   const avatarUrl = (liveProfile?.image != null && liveProfile.image !== "")
     ? liveProfile.image
-    : (profile?.image != null && profile.image !== "")
-      ? profile.image
-      : (session?.user?.image ?? AVATAR_URL);
+    : baseProfile.image;
 
   // Only filter menu items for TEACHER role. Other roles see full menu.
   const allowedFeatures = (session?.user as any)?.allowedFeatures ?? [];
@@ -173,7 +178,13 @@ export default function AppSidebar({ menuItems, profile, activeTab = "dashboard"
       await signOut({ callbackUrl: "/" });
       return;
     }
-    if (item.href) router.push(item.href);
+    if (item.href) {
+      router.push(item.href);
+      return;
+    }
+    if (item.tab && pathname) {
+      router.push(`${pathname}?tab=${encodeURIComponent(item.tab)}`);
+    }
   };
 
   const isAllowed = (item: SidebarItem) => {
@@ -215,6 +226,7 @@ export default function AppSidebar({ menuItems, profile, activeTab = "dashboard"
       <div className="px-4 py-4 border-b border-white/10" ref={profileRef}>
         <div className="relative">
           <button
+            type="button"
             onClick={() => enableSwitchAccounts && setProfileOpen((o) => !o)}
             className={`w-full bg-white/5 rounded-xl p-3 border border-white/10 text-left transition-all ${enableSwitchAccounts ? "hover:bg-white/10 cursor-pointer" : "cursor-default"}`}
           >
@@ -256,6 +268,7 @@ export default function AppSidebar({ menuItems, profile, activeTab = "dashboard"
                   const isCurrent = account.email === currentEmail;
                   return (
                     <button
+                      type="button"
                       key={account.email}
                       onClick={() => handleSwitchAccount(account)}
                       disabled={isCurrent}
@@ -302,6 +315,7 @@ export default function AppSidebar({ menuItems, profile, activeTab = "dashboard"
 
             return (
               <motion.button
+                type="button"
                 key={item.label}
                 whileHover={{ x: 4 }}
                 onClick={() => handleClick(item)}
@@ -339,6 +353,7 @@ export default function AppSidebar({ menuItems, profile, activeTab = "dashboard"
               const Icon = item.icon;
               return (
                 <motion.button
+                  type="button"
                   key={item.label}
                   whileHover={{ x: 4 }}
                   onClick={() => handleClick(item)}

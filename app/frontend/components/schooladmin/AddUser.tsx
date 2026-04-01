@@ -19,7 +19,9 @@ import { IUser } from "@/app/frontend/constants/addUserTable";
 export default function AddUser() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const activeTab = searchParams.get("view") ?? "all";
+  const parentTab = searchParams.get("tab");
+  const activeTab =
+    searchParams.get("view") ?? (parentTab === "add-user" ? "add" : "all");
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);

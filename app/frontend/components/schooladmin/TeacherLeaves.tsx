@@ -51,6 +51,31 @@ export default function SchoolTeacherLeavesTab() {
   const [conditionalMessage, setConditionalMessage] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
 
+  const applyLeaveStatusUpdate = useCallback(
+    (id: string, nextStatus: Status, remarks?: string | null) => {
+      const nowIso = new Date().toISOString();
+
+      setPendingLeaves((prev) => prev.filter((leave) => leave.id !== id));
+      setAllLeaves((prev) =>
+        prev.map((leave) =>
+          leave.id === id
+            ? {
+                ...leave,
+                status: nextStatus,
+                remarks: remarks ?? leave.remarks ?? null,
+                approvedAt:
+                  nextStatus === "APPROVED" || nextStatus === "CONDITIONALLY_APPROVED"
+                    ? nowIso
+                    : leave.approvedAt ?? null,
+                updatedAt: nowIso,
+              }
+            : leave
+        )
+      );
+    },
+    []
+  );
+
   /* ---------------- DATE HELPERS ---------------- */
 
   const today = useMemo(() => {
@@ -159,6 +184,8 @@ export default function SchoolTeacherLeavesTab() {
       });
 
       if (res.ok) {
+        applyLeaveStatusUpdate(id, "APPROVED");
+      } else {
         await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
       }
     } finally {
@@ -182,6 +209,12 @@ export default function SchoolTeacherLeavesTab() {
       });
 
       if (res.ok) {
+        applyLeaveStatusUpdate(
+          selectedLeaveId,
+          "CONDITIONALLY_APPROVED",
+          conditionalMessage.trim()
+        );
+      } else {
         await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
       }
 
@@ -204,6 +237,8 @@ export default function SchoolTeacherLeavesTab() {
       });
 
       if (res.ok) {
+        applyLeaveStatusUpdate(id, "REJECTED", "Rejected by admin");
+      } else {
         await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
       }
     } finally {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, Search, Settings } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SectionHeader from "./SectionHeader";
@@ -42,6 +42,36 @@ export default function AppHeader({ title, profile, hideSearchAndNotifications =
 
   const { data: session } = useSession();
   const isSuperAdminPanel = pathname?.startsWith("/frontend/pages/superadmin");
+  const baseProfile = useMemo(
+    () => ({
+      name: profile?.name?.trim() ? profile.name : session?.user?.name ?? "User",
+      subtitle: profile?.subtitle ?? session?.user?.role ?? "",
+      image:
+        profile?.image != null && profile.image !== ""
+          ? profile.image
+          : session?.user?.image ?? AVATAR_URL,
+      email: profile?.email ?? session?.user?.email ?? "",
+      phone: profile?.phone ?? session?.user?.mobile ?? "",
+      userId: profile?.userId,
+      address: profile?.address,
+      status: profile?.status,
+    }),
+    [
+      profile?.address,
+      profile?.email,
+      profile?.image,
+      profile?.name,
+      profile?.phone,
+      profile?.status,
+      profile?.subtitle,
+      profile?.userId,
+      session?.user?.email,
+      session?.user?.image,
+      session?.user?.mobile,
+      session?.user?.name,
+      session?.user?.role,
+    ]
+  );
 
   const fetchUnreadCount = useCallback(async () => {
     if (hideSearchAndNotifications) return;
@@ -63,14 +93,10 @@ export default function AppHeader({ title, profile, hideSearchAndNotifications =
   }, [fetchUnreadCount]);
   const displayName = (liveProfile?.name && liveProfile.name.trim())
     ? liveProfile.name
-    : (profile?.name && profile.name.trim())
-      ? profile.name
-      : (session?.user?.name ?? "User");
+    : baseProfile.name;
   const avatarUrl = (liveProfile?.image != null && liveProfile.image !== "")
     ? liveProfile.image
-    : (profile?.image != null && profile.image !== "")
-      ? profile.image
-      : (session?.user?.image ?? AVATAR_URL);
+    : baseProfile.image;
 
   const refreshLiveProfile = useCallback(async () => {
     try {
@@ -116,8 +142,14 @@ export default function AppHeader({ title, profile, hideSearchAndNotifications =
   ]);
 
   useEffect(() => {
-    refreshLiveProfile();
-  }, [refreshLiveProfile]);
+    setLiveProfile((prev) => ({
+      ...baseProfile,
+      ...prev,
+      name: prev?.name?.trim() ? prev.name : baseProfile.name,
+      image: prev?.image != null && prev.image !== "" ? prev.image : baseProfile.image,
+    }));
+    setModalProfile((prev) => prev ?? baseProfile);
+  }, [baseProfile]);
 
   useEffect(() => {
     const onUpdated = () => {
@@ -128,22 +160,13 @@ export default function AppHeader({ title, profile, hideSearchAndNotifications =
         void refreshLiveProfile();
       }
     };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") {
-        void refreshLiveProfile();
-      }
-    };
     window.addEventListener("teacher-profile-updated", onUpdated);
     window.addEventListener("profile-updated", onUpdated);
-    window.addEventListener("focus", onUpdated);
     window.addEventListener("storage", onStorage);
-    document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.removeEventListener("teacher-profile-updated", onUpdated);
       window.removeEventListener("profile-updated", onUpdated);
-      window.removeEventListener("focus", onUpdated);
       window.removeEventListener("storage", onStorage);
-      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refreshLiveProfile]);
 

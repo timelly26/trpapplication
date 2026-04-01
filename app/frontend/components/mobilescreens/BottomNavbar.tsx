@@ -64,6 +64,7 @@ export default function BottomNavBar({
 
           return (
             <button
+              type="button"
               key={item.label}
               onClick={() => item.href && router.push(item.href)}
               className={`
@@ -94,6 +95,7 @@ export default function BottomNavBar({
         {/* ALWAYS SHOW MORE IF LOGOUT EXISTS */}
         {hasMoreItems && (
           <button
+            type="button"
             onClick={onMoreClick}
             className="
               flex flex-col items-center
