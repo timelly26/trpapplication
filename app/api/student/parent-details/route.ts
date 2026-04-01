@@ -16,6 +16,8 @@ export async function GET() {
       select: {
         address: true,
         fatherName: true,
+        motherName: true,
+        occupation: true,
         phoneNo: true,
       },
     });
@@ -25,6 +27,8 @@ export async function GET() {
       return NextResponse.json({
         address: "",
         fatherName: "",
+        motherName: "",
+        occupation: "",
         fatherPhone: "",
       });
     }
@@ -32,6 +36,8 @@ export async function GET() {
     return NextResponse.json({
       address: student.address ?? "",
       fatherName: student.fatherName ?? "",
+      motherName: student.motherName ?? "",
+      occupation: student.occupation ?? "",
       fatherPhone: student.phoneNo ?? "",
     });
   } catch (e: unknown) {
@@ -67,12 +73,16 @@ export async function PUT(req: Request) {
     const {
       address,
       fatherName,
+      motherName,
+      occupation,
       fatherPhone,
     } = body;
 
     const updateData: any = {};
     if (address !== undefined) updateData.address = address || null;
     if (fatherName !== undefined) updateData.fatherName = fatherName || null;
+    if (motherName !== undefined) updateData.motherName = motherName || null;
+    if (occupation !== undefined) updateData.occupation = occupation || null;
     if (fatherPhone !== undefined) updateData.phoneNo = fatherPhone || null;
 
     await prisma.student.update({

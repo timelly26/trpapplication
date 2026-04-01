@@ -206,10 +206,10 @@ export async function GET(_req: Request, context: RouteParams) {
         address: student.address ?? "",
         phone: student.phoneNo ?? "",
         fatherName: student.fatherName ?? "",
-        motherName: (student as { motherName?: string | null }).motherName ?? "",
+        motherName: student.motherName ?? "",
         gender: student.gender ?? "",
-        fatherOccupation: (student as { fatherOccupation?: string | null }).fatherOccupation ?? "",
-        motherOccupation: (student as { motherOccupation?: string | null }).motherOccupation ?? "",
+        fatherOccupation: student.occupation ?? "",
+        motherOccupation: student.occupation ?? "",
         fatherPhone: student.phoneNo ?? "",
         previousSchool: student.previousSchool ?? "",
         // status isn’t stored on the model yet; show Active by default
@@ -301,6 +301,8 @@ export async function PUT(req: Request, context: RouteParams) {
     const body = await req.json();
     const name = typeof body.name === "string" ? body.name.trim() : undefined;
     const fatherName = typeof body.fatherName === "string" ? body.fatherName.trim() : undefined;
+    const motherName = typeof body.motherName === "string" ? body.motherName.trim() || null : undefined;
+    const occupation = typeof body.occupation === "string" ? body.occupation.trim() || null : undefined;
     const classId = typeof body.classId === "string" ? (body.classId || null) : undefined;
     const rollNo = typeof body.rollNo === "string" ? body.rollNo.trim() || null : undefined;
     const phoneNo = typeof body.phoneNo === "string" ? body.phoneNo.trim() : undefined;
@@ -328,6 +330,8 @@ export async function PUT(req: Request, context: RouteParams) {
 
     const studentUpdate: Record<string, unknown> = {};
     if (fatherName !== undefined) studentUpdate.fatherName = fatherName;
+    if (motherName !== undefined) studentUpdate.motherName = motherName;
+    if (occupation !== undefined) studentUpdate.occupation = occupation;
     if (classId !== undefined) studentUpdate.classId = classId;
     if (rollNo !== undefined) studentUpdate.rollNo = rollNo;
     if (phoneNo !== undefined) studentUpdate.phoneNo = phoneNo;

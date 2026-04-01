@@ -115,6 +115,8 @@ export default function PortalSettingsPanel({ portal }: { portal: PortalVariant 
         address: portal === "parent" ? (parentDetails.address ?? "") : (u.address ?? ""),
         fatherName: parentDetails.fatherName ?? "",
         fatherPhone: parentDetails.fatherPhone ?? "",
+        motherName: parentDetails.motherName ?? "",
+        occupation: parentDetails.occupation ?? "",
       };
       setForm(next);
       setInitialForm(next);
@@ -334,6 +336,8 @@ function baseForm(overrides?: Partial<FormState>): FormState {
     address: "",
     fatherName: "",
     fatherPhone: "",
+    motherName: "",
+    occupation: "",
     ...overrides,
   };
 }
@@ -364,6 +368,8 @@ async function saveProfile(form: FormState, portal: PortalVariant) {
         address: form.address || null,
         fatherName: form.fatherName || null,
         fatherPhone: form.fatherPhone || null,
+        motherName: form.motherName || null,
+        occupation: form.occupation || null,
       }),
     }) : Promise.resolve(null),
   ]);

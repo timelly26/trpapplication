@@ -61,7 +61,8 @@ const DEFAULT_FORM: StudentFormState = {
   section: "",
   status: "Active",
   fatherName: "",
-  parentOccupation: "",
+  motherName: "",
+  occupation: "",
   officeAddress: "",
   phoneNo: "",
   email: "",
@@ -364,6 +365,8 @@ export default function useStudentPage({ classes = [], reload }: Props) {
       const res: Response = await addStudent({
         name: form.name,
         fatherName: form.fatherName,
+        motherName: form.motherName,
+        occupation: form.occupation,
         aadhaarNo: form.aadhaarNo,
         phoneNo: form.phoneNo,
         dob: form.dob,
@@ -489,6 +492,8 @@ export default function useStudentPage({ classes = [], reload }: Props) {
       const res = await updateStudent(editStudent.id, {
         name: editForm.name.trim(),
         fatherName: editForm.fatherName.trim(),
+        motherName: editForm.motherName.trim() || undefined,
+        occupation: editForm.occupation.trim() || undefined,
         classId: editForm.classId || undefined,
         rollNo: editForm.rollNo.trim() || undefined,
         phoneNo: editForm.phoneNo.trim() || undefined,

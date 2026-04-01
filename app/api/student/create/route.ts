@@ -60,6 +60,8 @@ export async function POST(req: Request) {
       applicationId,
       name,
       fatherName,
+      motherName,
+      occupation,
       aadhaarNo,
       phoneNo,
       email: emailInput,
@@ -383,6 +385,16 @@ export async function POST(req: Request) {
             gender,
             previousSchool,
             fatherName: String(effectiveFatherName).trim(),
+            motherName:
+              typeof motherName === "string" && motherName.trim()
+                ? motherName.trim()
+                : null,
+            occupation:
+              typeof occupation === "string" && occupation.trim()
+                ? occupation.trim()
+                : typeof parentOccupation === "string" && parentOccupation.trim()
+                ? parentOccupation.trim()
+                : null,
             aadhaarNo: aadhaarCleaned,
             phoneNo: String(effectivePhoneNo).trim(),
             rollNo:

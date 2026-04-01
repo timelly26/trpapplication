@@ -435,6 +435,8 @@ model Student {
   // Student Details - admissionNumber is unique and used as login (User.email)
   admissionNumber String   @unique
   fatherName      String
+  motherName      String?
+  occupation      String?
   aadhaarNo       String   @unique
   phoneNo         String
   rollNo          String? // modifiable by admin

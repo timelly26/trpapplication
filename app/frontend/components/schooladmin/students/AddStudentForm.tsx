@@ -192,9 +192,18 @@ export default function AddStudentForm({
           </div>
           <div>
             <InputField
-              label="Parent Occupation"
-              value={form.parentOccupation}
-              onChange={(value) => onFieldChange("parentOccupation", value)}
+              label="Mother Name"
+              value={form.motherName}
+              onChange={(value) => onFieldChange("motherName", value)}
+              placeholder="Mother Name"
+              bgColor="white"
+            />
+          </div>
+          <div>
+            <InputField
+              label="Occupation"
+              value={form.occupation}
+              onChange={(value) => onFieldChange("occupation", value)}
               placeholder="e.g. Business"
               bgColor="white"
             />

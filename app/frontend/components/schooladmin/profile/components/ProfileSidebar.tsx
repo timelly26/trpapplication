@@ -102,9 +102,15 @@ export const ProfileSidebar = ({
         {/* Mother Info */}
         <div className="space-y-3">
           <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">Mother</label>
-          <div className="bg-white/5 py-2 px-2 rounded-2xl border border-white/5">
-            <p className="text-[10px] text-gray-500 font-bold uppercase">Name</p>
-            <p className="text-xs font-bold text-white">{motherName || "Not Provided"}</p>
+          <div className="grid grid-cols-1 gap-2">
+            <div className="bg-white/5 py-2 px-2 rounded-2xl border border-white/5">
+              <p className="text-[10px] text-gray-500 font-bold uppercase">Name</p>
+              <p className="text-xs font-bold text-white">{motherName || "Not Provided"}</p>
+            </div>
+            <div className="bg-white/5 py-2 px-2 rounded-2xl border border-white/5">
+              <p className="text-[10px] text-gray-500 font-bold uppercase">Occupation</p>
+              <p className="text-xs font-bold text-white">{motherOccupation || "-"}</p>
+            </div>
           </div>
         </div>
       </div>

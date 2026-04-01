@@ -13,6 +13,8 @@ export type FormState = {
   address?: string;
   fatherName?: string;
   fatherPhone?: string;
+  motherName?: string;
+  occupation?: string;
 };
 
 export type PasswordState = {

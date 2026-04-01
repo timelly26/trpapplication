@@ -128,6 +128,12 @@ function ParentDetailsCard({
           <Field label="Father's Name">
             <SearchInput value={form.fatherName || ""} onChange={(v) => setForm((p) => ({ ...p, fatherName: v }))} icon={User} variant="glass" className="mt-2" />
           </Field>
+          <Field label="Mother's Name">
+            <SearchInput value={form.motherName || ""} onChange={(v) => setForm((p) => ({ ...p, motherName: v }))} icon={User} variant="glass" className="mt-2" />
+          </Field>
+          <Field label="Occupation">
+            <SearchInput value={form.occupation || ""} onChange={(v) => setForm((p) => ({ ...p, occupation: v }))} icon={Users} variant="glass" className="mt-2" />
+          </Field>
           <Field label="Father's Phone">
             <SearchInput value={form.fatherPhone || ""} onChange={(v) => setForm((p) => ({ ...p, fatherPhone: v }))} icon={Phone} variant="glass" className="mt-2" />
           </Field>

@@ -22,7 +22,8 @@ export type StudentFormState = {
   section: string;
   status: string;
   fatherName: string;
-  parentOccupation: string;
+  motherName: string;
+  occupation: string;
   officeAddress: string;
   phoneNo: string;
   email: string;

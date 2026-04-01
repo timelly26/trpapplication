@@ -5,6 +5,8 @@ export interface IStudent {
   adhaarNumber?: string;
   aadhaarNo?: string;
   fatherName?: string;
+  motherName?: string;
+  occupation?: string;
   address?: string;
   admissionNumber?: string;
   gender?: string;
