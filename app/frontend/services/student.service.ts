@@ -35,6 +35,8 @@ export const assignStudentsToClass = (studentId: string, classId: string) =>
 export const updateStudent = (studentId: string, payload: {
   name?: string;
   fatherName?: string;
+  motherName?: string;
+  occupation?: string;
   classId?: string;
   rollNo?: string;
   phoneNo?: string;
