@@ -512,8 +512,8 @@ export async function POST(req: Request) {
         return studentRecord;
       },
       {
-        maxWait: 10000, // Maximum time to wait for a transaction slot (10 seconds)
-        timeout: 20000, // Maximum time the transaction can run (20 seconds)
+        maxWait: 15000,
+        timeout: 45000, // Large create (user + student + fee + application) — allow slow DB/pooler
       }
     );
 

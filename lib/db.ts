@@ -20,8 +20,13 @@ function withParam(url: string, key: string, value: string) {
 let connectionString = base || "";
 if (connectionString) {
   connectionString = withParam(connectionString, "statement_timeout", "120000");
-  connectionString = withParam(connectionString, "connection_limit", "3");
-  connectionString = withParam(connectionString, "pool_timeout", "20");
+  // Default was 3 and exhausted quickly with concurrent API + NextAuth JWT work.
+  // Override with PRISMA_CONNECTION_LIMIT in .env if your host requires a specific cap.
+  const poolLimit = process.env.PRISMA_CONNECTION_LIMIT || "15";
+  if (!connectionString.includes("connection_limit=")) {
+    connectionString = withParam(connectionString, "connection_limit", poolLimit);
+  }
+  connectionString = withParam(connectionString, "pool_timeout", "30");
   connectionString = withParam(connectionString, "connect_timeout", "15");
 }
 
