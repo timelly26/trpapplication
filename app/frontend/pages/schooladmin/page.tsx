@@ -43,7 +43,7 @@ function SchoolAdminContent() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/user/me");
+        const res = await fetch("/api/user/me", { credentials: "include", cache: "no-store" });
         const data = await res.json();
         if (cancelled || !res.ok) return;
         const u = data.user;

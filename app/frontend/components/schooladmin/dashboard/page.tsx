@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StatCard } from "../dashboard/components/StatCard";
 import { AttendanceCard } from "./components/AttendanceCard";
 import { SidebarList } from "./components/SidebarList";
@@ -8,6 +8,7 @@ import { Users, GraduationCap, UserCheck, CalendarDays, Wallet } from "lucide-re
 import Spinner from "../../common/Spinner";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/app/frontend/constants/routes";
+import { useSession } from "next-auth/react";
 
 type DashboardData = {
   stats: {
@@ -66,28 +67,24 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userName, setUserName] = useState("Rajesh");
   const router=useRouter();
+  const { data: session } = useSession();
+  const userName = useMemo(() => {
+    const n = session?.user?.name?.trim();
+    return n ? (n.split(" ")[0] ?? "School") : "School";
+  }, [session?.user?.name]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
       try {
-        const [dashboardRes, userRes] = await Promise.all([
-          fetch("/api/school/dashboard", { 
-            credentials: "include",
-            cache: "no-store"
-          }),
-          fetch("/api/user/me", { 
-            credentials: "include",
-            cache: "no-store"
-          }),
-        ]);
-
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData?.user?.name) setUserName(userData.user.name.split(" ")[0] ?? "Rajesh");
-        }
+        const dashboardRes = await fetch("/api/school/dashboard", { 
+          credentials: "include",
+          cache: "no-store",
+          signal: controller.signal,
+        });
 
         if (!dashboardRes.ok) {
           const errorData = await dashboardRes.json().catch(() => ({}));
@@ -107,10 +104,17 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Dashboard fetch error:", error);
         if (!cancelled) {
-          setError(error instanceof Error ? error.message : "Unable to load dashboard data");
+          const message =
+            error instanceof DOMException && error.name === "AbortError"
+              ? "Dashboard request timed out. Please try again."
+              : error instanceof Error
+              ? error.message
+              : "Unable to load dashboard data";
+          setError(message);
           setData(null);
         }
       } finally {
+        clearTimeout(timeout);
         if (!cancelled) setLoading(false);
       }
     })();
