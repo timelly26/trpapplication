@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import type { HomeworkItem, ClassOption, HomeworkFilter } from "./types";
 
 export default function useHomeworkPage() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [homeworks, setHomeworks] = useState<HomeworkItem[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
@@ -81,6 +83,11 @@ export default function useHomeworkPage() {
         setHomeworks((prev) => prev.filter((h) => h.id !== id));
         if (expandedId === id) setExpandedId(null);
         await fetchData();
+        try {
+          router.refresh();
+        } catch {
+          /* noop */
+        }
       } else {
         alert(d.message || "Delete failed");
       }
@@ -101,7 +108,7 @@ export default function useHomeworkPage() {
     setEditingHomework(null);
   };
 
-  const handleSubmitSuccess = (createdOrUpdated: HomeworkItem) => {
+  const handleSubmitSuccess = async (createdOrUpdated: HomeworkItem) => {
     if (editingHomework) {
       setHomeworks((prev) => prev.map((h) => (h.id === createdOrUpdated.id ? createdOrUpdated : h)));
     } else {
@@ -109,6 +116,12 @@ export default function useHomeworkPage() {
     }
     setShowForm(false);
     setEditingHomework(null);
+    await fetchData();
+    try {
+      router.refresh();
+    } catch {
+      /* noop */
+    }
   };
 
   const toggleExpanded = (id: string) => {

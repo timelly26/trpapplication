@@ -8,7 +8,8 @@ import EventCard from "./workshops/EventCard";
 import EventDetailsModal from "./workshops/EventDetailsModal";
 import DeleteEventModal from "./workshops/DeleteEventModal";
 import { CalendarDays, CheckCircle, List, Plus, Users, X } from "lucide-react";
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ReactNode, useEffect, useMemo, useRef, useState, useCallback } from "react";
 
 interface EventItem {
   id: string;
@@ -30,6 +31,7 @@ interface EventItem {
 }
 
 export default function WorkshopsAndEventsTab() {
+  const router = useRouter();
   const [activeAction, setActiveAction] = useState<"workshop" | "none">("none");
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -46,11 +48,11 @@ export default function WorkshopsAndEventsTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 3;
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoadingEvents(true);
       setEventsError(null);
-      const res = await fetch("/api/events/list");
+      const res = await fetch("/api/events/list", { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data?.message || "Failed to load events");
@@ -61,11 +63,34 @@ export default function WorkshopsAndEventsTab() {
     } finally {
       setLoadingEvents(false);
     }
-  };
+  }, []);
+
+  const refetchEventsAfterMutation = useCallback(() => {
+    void fetchEvents();
+    try {
+      router.refresh();
+    } catch {
+      /* noop */
+    }
+  }, [fetchEvents, router]);
+
+  const handleEventUpsert = useCallback(
+    (event?: { id: string } | null) => {
+      if (event?.id) {
+        setEvents((prev) => {
+          const index = prev.findIndex((e) => e.id === event.id);
+          if (index === -1) return prev;
+          return prev.map((e) => (e.id === event.id ? { ...e, ...event } : e));
+        });
+      }
+      refetchEventsAfterMutation();
+    },
+    [refetchEventsAfterMutation]
+  );
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    void fetchEvents();
+  }, [fetchEvents]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -262,7 +287,7 @@ export default function WorkshopsAndEventsTab() {
                 setActiveAction("none");
                 setEditingEvent(null);
               }}
-              onCreated={fetchEvents}
+              onCreated={handleEventUpsert}
               initialEvent={editingEvent}
             />
           </div>
@@ -289,18 +314,22 @@ export default function WorkshopsAndEventsTab() {
           onCancel={() => setDeleteTarget(null)}
           onConfirm={async () => {
             if (!deleteTarget) return;
+            const deletingEventId = deleteTarget.id;
+            const snapshot = events;
+            setEvents((prev) => prev.filter((e) => e.id !== deletingEventId));
+            setDeleteTarget(null);
             try {
               setDeleteLoading(true);
-              const res = await fetch(`/api/events/${deleteTarget.id}`, {
+              const res = await fetch(`/api/events/${deletingEventId}`, {
                 method: "DELETE",
               });
               const data = await res.json();
               if (!res.ok) {
                 throw new Error(data?.message || "Failed to delete event");
               }
-              setDeleteTarget(null);
-              fetchEvents();
+              refetchEventsAfterMutation();
             } catch (err: any) {
+              setEvents(snapshot);
               console.error(err);
             } finally {
               setDeleteLoading(false);

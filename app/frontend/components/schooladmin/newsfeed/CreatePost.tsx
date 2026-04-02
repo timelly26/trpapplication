@@ -151,7 +151,6 @@ export default function CreatePost({ onPublished }: CreatePostProps) {
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-3 pt-2">
-          <span className="text-white/50 text-xs sm:block">High-quality images are stored in Supabase</span>
           <button
             type="submit"
             disabled={posting}

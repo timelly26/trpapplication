@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Eye, Pencil, Trash2, Download, UserCheck,
   Coffee, Clock, XCircle, Search, Save, Calendar
@@ -87,6 +88,7 @@ const MobileTeacherCard = ({ teacher, onEdit, onDelete }: {
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const SchoolAdminTeacherTab = () => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
@@ -97,53 +99,61 @@ const SchoolAdminTeacherTab = () => {
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [saveAttendanceLoading, setSaveAttendanceLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setTeachersLoading(true);
-      try {
-        const res = await fetch("/api/teacher/list", { credentials: "include" });
-        const data = await res.json();
-        console.log(data)
-        if (cancelled || !res.ok) return;
-        const list: TeacherRow[] = (data.teachers || []).map((t: { id: string; name: string | null; email: string | null; mobile: string | null; teacherId: string | null; subject: string | null; photoUrl: string | null }) => ({
-          id: t.id,
-          teacherId: t.teacherId || t.id.slice(0, 6).toUpperCase(),
-          name: t.name || "Teacher",
-          avatar: t.photoUrl || DEFAULT_AVATAR,
-          subject: t.subject || "-",
-          attendance: 0,
-          phone: t.mobile || "-",
-          status: "Active" as const,
-        }));
-        setTeachers(list);
-      } finally {
-        if (!cancelled) setTeachersLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
+  const loadTeachers = useCallback(async () => {
+    setTeachersLoading(true);
+    try {
+      const res = await fetch("/api/teacher/list", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (!res.ok) return;
+      const list: TeacherRow[] = (data.teachers || []).map((t: { id: string; name: string | null; email: string | null; mobile: string | null; teacherId: string | null; subject: string | null; photoUrl: string | null }) => ({
+        id: t.id,
+        teacherId: t.teacherId || t.id.slice(0, 6).toUpperCase(),
+        name: t.name || "Teacher",
+        avatar: t.photoUrl || DEFAULT_AVATAR,
+        subject: t.subject || "-",
+        attendance: 0,
+        phone: t.mobile || "-",
+        status: "Active" as const,
+      }));
+      setTeachers(list);
+    } finally {
+      setTeachersLoading(false);
+    }
   }, []);
 
   useEffect(() => {
+    void loadTeachers();
+  }, [loadTeachers]);
+
+  const loadAttendanceForDate = useCallback(async () => {
     if (!attendanceDate) return;
-    let cancelled = false;
     setAttendanceLoading(true);
-    fetch(`/api/teacher/attendance?date=${attendanceDate}`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((data) => {
-        if (cancelled) return;
-        const map: Record<string, AttendanceStatus> = {};
-        (data.attendances || []).forEach((a: { teacherId: string; status: string }) => {
-          if (ATTENDANCE_STATUSES.includes(a.status as AttendanceStatus)) {
-            map[a.teacherId] = a.status as AttendanceStatus;
-          }
-        });
-        setAttendanceMap(map);
-      })
-      .catch(() => { if (!cancelled) setAttendanceMap({}); })
-      .finally(() => { if (!cancelled) setAttendanceLoading(false); });
-    return () => { cancelled = true; };
+    try {
+      const r = await fetch(`/api/teacher/attendance?date=${attendanceDate}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const data = await r.json();
+      const map: Record<string, AttendanceStatus> = {};
+      (data.attendances || []).forEach((a: { teacherId: string; status: string }) => {
+        if (ATTENDANCE_STATUSES.includes(a.status as AttendanceStatus)) {
+          map[a.teacherId] = a.status as AttendanceStatus;
+        }
+      });
+      setAttendanceMap(map);
+    } catch {
+      setAttendanceMap({});
+    } finally {
+      setAttendanceLoading(false);
+    }
   }, [attendanceDate]);
+
+  useEffect(() => {
+    void loadAttendanceForDate();
+  }, [loadAttendanceForDate]);
 
   const teachersWithAttendance = useMemo(() => {
     return teachers.map((t) => {
@@ -217,6 +227,12 @@ const SchoolAdminTeacherTab = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to save");
+      await loadAttendanceForDate();
+      try {
+        router.refresh();
+      } catch {
+        /* noop */
+      }
       if (typeof window !== "undefined") window.alert("Attendance saved successfully.");
     } catch (e) {
       if (typeof window !== "undefined") window.alert(e instanceof Error ? e.message : "Failed to save attendance.");
@@ -568,6 +584,12 @@ const SchoolAdminTeacherTab = () => {
           onSave={(t) => {
             handleSaveTeacher(t);
             setEditingTeacher(null);
+            void loadTeachers();
+            try {
+              router.refresh();
+            } catch {
+              /* noop */
+            }
           }}
         />
       )}
@@ -576,7 +598,16 @@ const SchoolAdminTeacherTab = () => {
       {/* ================= Teachers List ================= */}
 
       <div className="w-full min-w-0">
-        <AppointTeacher />
+        <AppointTeacher
+          onRosterChange={() => {
+            void loadTeachers();
+            try {
+              router.refresh();
+            } catch {
+              /* noop */
+            }
+          }}
+        />
       </div>
       </div>
     </div>

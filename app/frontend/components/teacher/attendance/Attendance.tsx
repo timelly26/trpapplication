@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -54,6 +55,7 @@ function formatLongDate(value: string) {
 const DEFAULT_PERIOD = 1;
 
 export default function TeacherAttendanceTab() {
+  const router = useRouter();
   const toast = useToastContext();
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedDate, setSelectedDate] = useState(
@@ -121,11 +123,26 @@ export default function TeacherAttendanceTab() {
     const fetchStudents = async () => {
       setLoadingStudents(true);
       try {
-        const res = await fetch(`/api/class/${selectedClass}`);
-        const data = await res.json();
-        if (!res.ok) {
+        const [classRes, attRes] = await Promise.all([
+          fetch(`/api/class/${selectedClass}`),
+          fetch(
+            `/api/attendance/view?classId=${encodeURIComponent(selectedClass)}&date=${encodeURIComponent(selectedDate)}`,
+            { credentials: "include" }
+          ),
+        ]);
+        const data = await classRes.json();
+        if (!classRes.ok) {
           throw new Error(data?.message || "Failed to load students");
         }
+
+        const attData = attRes.ok ? await attRes.json() : { attendances: [] };
+        const statusByStudentId: Record<string, AttendanceStatus> = {};
+        (attData?.attendances ?? []).forEach((a: { studentId: string; status: string }) => {
+          const s = (a.status || "PRESENT").toLowerCase();
+          if (s === "present" || s === "absent" || s === "late") {
+            statusByStudentId[a.studentId] = s as AttendanceStatus;
+          }
+        });
 
         const classData = data?.class;
         const mappedStudents: StudentRow[] = Array.isArray(
@@ -139,7 +156,7 @@ export default function TeacherAttendanceTab() {
                 student.user?.photoUrl ||
                 student.photoUrl ||
                 `https://i.pravatar.cc/80?u=${student.id}`,
-              status: "present",
+              status: statusByStudentId[student.id] ?? "present",
             }))
           : [];
 
@@ -160,7 +177,7 @@ export default function TeacherAttendanceTab() {
     return () => {
       isActive = false;
     };
-  }, [selectedClass, toast]);
+  }, [selectedClass, selectedDate, toast]);
 
   const stats = useMemo(() => {
     const present = students.filter((s) => s.status === "present").length;
@@ -355,6 +372,35 @@ export default function TeacherAttendanceTab() {
 
       if (!res.ok) {
         throw new Error(data?.message || "Failed to save attendance");
+      }
+
+      try {
+        const sync = await fetch(
+          `/api/attendance/view?classId=${encodeURIComponent(selectedClass)}&date=${encodeURIComponent(selectedDate)}`,
+          { credentials: "include" }
+        );
+        const syncData = sync.ok ? await sync.json() : { attendances: [] };
+        const statusByStudentId: Record<string, AttendanceStatus> = {};
+        (syncData?.attendances ?? []).forEach((a: { studentId: string; status: string }) => {
+          const s = (a.status || "PRESENT").toLowerCase();
+          if (s === "present" || s === "absent" || s === "late") {
+            statusByStudentId[a.studentId] = s as AttendanceStatus;
+          }
+        });
+        setStudents((prev) =>
+          prev.map((row) => ({
+            ...row,
+            status: statusByStudentId[row.id] ?? row.status,
+          }))
+        );
+      } catch {
+        /* keep local state */
+      }
+
+      try {
+        router.refresh();
+      } catch {
+        /* noop */
       }
 
       setShowSuccess(true);

@@ -31,7 +31,7 @@ const modeOptions = [
 
 interface CreateEventFormProps {
   onCancel?: () => void;
-  onCreated?: () => void;
+  onCreated?: (event?: { id: string } | null) => void;
   initialEvent?: {
     id: string;
     title: string;
@@ -201,7 +201,7 @@ export default function CreateEventForm({
         setPhotoDataUrl(null);
       }
 
-      onCreated?.();
+      onCreated?.(data?.event);
       const selectedLabel =
         eventTypeOptions.find((opt) => opt.id === type)?.name ?? "Event";
       const normalizedLabel =

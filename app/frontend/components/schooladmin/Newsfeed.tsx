@@ -1,11 +1,23 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { useNewsFeeds } from "../../hooks/useNewsFeeds";
 import CreatePost from "./newsfeed/CreatePost";
 import PostCard from "./newsfeed/PostCard";
 
 export default function NewsFeed() {
+  const router = useRouter();
   const { feeds, loading, error, refetch, toggleLike, likingIds } = useNewsFeeds();
+
+  const onPublished = useCallback(() => {
+    void refetch();
+    try {
+      router.refresh();
+    } catch {
+      /* noop */
+    }
+  }, [refetch, router]);
 
   return (
     <div className="min-h-screen text-white font-sans p-3 sm:p-4 md:p-6 lg:p-8">
@@ -17,7 +29,7 @@ export default function NewsFeed() {
           </p>
         </section>
 
-        <CreatePost onPublished={refetch} />
+        <CreatePost onPublished={onPublished} />
 
         {error && (
           <div className="rounded-xl bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300 text-sm">

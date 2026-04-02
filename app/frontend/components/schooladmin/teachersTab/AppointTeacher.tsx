@@ -38,8 +38,13 @@ type AppointmentRow = {
   avatar: string;
 };
 
+type AppointTeacherProps = {
+  /** After assign/remove class teacher, refresh the main teachers list / stats. */
+  onRosterChange?: () => void;
+};
+
 /* ================= COMPONENT ================= */
-export default function AppointTeacher() {
+export default function AppointTeacher({ onRosterChange }: AppointTeacherProps) {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,6 +182,7 @@ export default function AppointTeacher() {
       setEditingClassId(null);
 
       await loadData();
+      onRosterChange?.();
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Failed.");
     } finally {
@@ -215,6 +221,7 @@ export default function AppointTeacher() {
     });
 
     await loadData();
+    onRosterChange?.();
 
     setRemovingId(null);
   };

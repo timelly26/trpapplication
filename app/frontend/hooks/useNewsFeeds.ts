@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export interface NewsFeedItem {
   id: string;
@@ -19,12 +19,25 @@ export function useNewsFeeds() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [likingIds, setLikingIds] = useState<Record<string, boolean>>({});
+  const feedsRef = useRef<NewsFeedItem[]>([]);
+  const likingIdsRef = useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    feedsRef.current = feeds;
+  }, [feeds]);
+
+  useEffect(() => {
+    likingIdsRef.current = likingIds;
+  }, [likingIds]);
 
   const fetchFeeds = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/newsfeed/list", { credentials: "same-origin" });
+      const res = await fetch("/api/newsfeed/list", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to load news feed");
       const list = Array.isArray(data.newsFeeds) ? data.newsFeeds : [];
@@ -62,8 +75,8 @@ export function useNewsFeeds() {
   }, [fetchFeeds]);
 
   const toggleLike = useCallback(async (id: string) => {
-    const currentFeed = feeds.find((feed) => feed.id === id);
-    if (!currentFeed || likingIds[id]) return;
+    const currentFeed = feedsRef.current.find((feed) => feed.id === id);
+    if (!currentFeed || likingIdsRef.current[id]) return;
 
     const nextLiked = !currentFeed.likedByMe;
     const nextLikes = Math.max(0, currentFeed.likes + (nextLiked ? 1 : -1));
@@ -78,7 +91,10 @@ export function useNewsFeeds() {
     );
 
     try {
-      const res = await fetch(`/api/newsfeed/${id}/like`, { method: "POST" });
+      const res = await fetch(`/api/newsfeed/${id}/like`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to update like");
       setFeeds((prev) =>
@@ -107,7 +123,7 @@ export function useNewsFeeds() {
         return next;
       });
     }
-  }, [feeds, likingIds]);
+  }, []);
 
   return { feeds, loading, error, refetch: fetchFeeds, toggleLike, likingIds };
 }
