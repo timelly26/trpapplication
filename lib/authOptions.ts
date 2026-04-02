@@ -119,10 +119,25 @@ export const authOptions: NextAuthOptions = {
       token.studentId = user.studentId;
       token.allowedFeatures = user.allowedFeatures ?? [];
       token.image = (user as { image?: string | null }).image ?? null;
+      (token as any)._dbSyncAt = Date.now();
     }
 
-    // Keep schoolId and allowedFeatures in sync (single query)
-    if (token.id) {
+    // Keep schoolId/allowedFeatures/image in sync, but NOT on every request.
+    // The jwt callback runs very frequently (every getServerSession / /api/auth/session),
+    // so doing a DB query each time will exhaust small connection pools in production.
+    const shouldSyncFromDb = (() => {
+      if (!token.id) return false;
+      const now = Date.now();
+      const last = typeof (token as any)._dbSyncAt === "number" ? (token as any)._dbSyncAt : 0;
+      const stale = now - last > 5 * 60 * 1000; // 5 minutes
+      const missingCritical =
+        token.schoolId == null ||
+        token.allowedFeatures == null ||
+        (token as any).image == null;
+      return stale || missingCritical;
+    })();
+
+    if (shouldSyncFromDb && token.id) {
       const dbUser = await prisma.user.findUnique({
         where: { id: token.id as string },
         select: {
@@ -148,6 +163,7 @@ export const authOptions: NextAuthOptions = {
         }
         token.image = dbUser.photoUrl ?? token.image ?? null;
         token.schoolIsActive = true;
+        (token as any)._dbSyncAt = Date.now();
       }
     }
 

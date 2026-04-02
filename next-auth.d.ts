@@ -34,5 +34,7 @@ declare module "next-auth/jwt" {
     allowedFeatures?: string[];
     schoolIsActive?: boolean;
     image?: string | null;
+    /** internal cache timestamp for DB sync (ms since epoch) */
+    _dbSyncAt?: number;
   }
 }
