@@ -8,9 +8,12 @@ export async function GET() {
     if (!session?.user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
+    if (!session.user.schoolId) {
+      return Response.json({ error: "School not found in session" }, { status: 400 })
+    }
     const leaves = await prisma.leaveRequest.findMany({
       where: {
-        schoolId: session.user.schoolId as string,
+        schoolId: session.user.schoolId,
         status: "PENDING"
       },
       include: {

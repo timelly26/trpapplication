@@ -44,6 +44,13 @@ export async function POST(_req: Request, context: ApproveParams) {
       );
     }
 
+    if (session.user.schoolId && appointment.schoolId && appointment.schoolId !== session.user.schoolId) {
+      return NextResponse.json(
+        { message: "Not allowed to approve appointments from another school" },
+        { status: 403 }
+      );
+    }
+
     const updated = await prisma.appointment.update({
       where: { id: appointmentId },
       data: { status: "APPROVED" },

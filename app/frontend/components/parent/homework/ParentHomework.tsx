@@ -171,13 +171,14 @@ export default function Page() {
           body: formData,
         });
 
+        const uploadData = await uploadRes.json().catch(() => ({}));
         if (!uploadRes.ok) {
-          const uploadData = await uploadRes.json().catch(() => ({}));
           throw new Error(uploadData.message || 'File upload failed');
         }
-
-        const uploadData = await uploadRes.json();
-        const fileUrl = uploadData.url;
+        const fileUrl = uploadData.url as string | undefined;
+        if (!fileUrl) {
+          throw new Error('File upload succeeded but no URL was returned');
+        }
 
         // Then submit the homework
         const submitRes = await fetch('/api/homework/submit', {

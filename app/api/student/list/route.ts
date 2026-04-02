@@ -45,6 +45,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const rollNo = searchParams.get("rollNo")?.trim();
     const admissionNumber = searchParams.get("admissionNumber")?.trim();
+    const takeParam = searchParams.get("take");
+    const take = takeParam ? Math.min(1000, Math.max(1, Number(takeParam) || 0)) : null;
 
     const where: {
       schoolId: string;
@@ -65,6 +67,7 @@ export async function GET(req: Request) {
         },
       },
       orderBy: { createdAt: "desc" },
+      ...(take ? { take } : {}),
     });
 
     return NextResponse.json({ students }, { status: 200 });

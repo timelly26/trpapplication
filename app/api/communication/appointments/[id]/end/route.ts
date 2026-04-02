@@ -44,6 +44,13 @@ export async function POST(_req: Request, context: EndParams) {
       );
     }
 
+    if (session.user.schoolId && appointment.schoolId && appointment.schoolId !== session.user.schoolId) {
+      return NextResponse.json(
+        { message: "Not allowed to end chats from another school" },
+        { status: 403 }
+      );
+    }
+
     if (appointment.status !== "APPROVED") {
       return NextResponse.json(
         { message: "Only approved chats can be ended" },
