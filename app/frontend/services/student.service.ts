@@ -12,6 +12,8 @@ export const addStudent = (payload: any) =>
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    // Student create runs a large Prisma transaction; allow extra time vs default.
+    timeoutMs: 90000,
   });
 
 export const uploadStudentsCSV = (file: File, classId: string) => {

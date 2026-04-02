@@ -459,6 +459,7 @@ export default function useStudentPage({ classes = [], reload }: Props) {
 
     try {
       setSaving(true);
+      const classIdPayload = form.classId?.trim() ? form.classId.trim() : undefined;
       const res: Response = await addStudent({
         name: form.name.trim(),
         fatherName: form.fatherName.trim(),
@@ -468,7 +469,7 @@ export default function useStudentPage({ classes = [], reload }: Props) {
         phoneNo: phoneDigits,
         email: form.email.trim() || undefined,
         dob: form.dob,
-        classId: form.classId,
+        classId: classIdPayload,
         address: form.address?.trim() || undefined,
         totalFee: Number(form.totalFee),
         discountPercent: form.discountPercent
@@ -494,11 +495,17 @@ export default function useStudentPage({ classes = [], reload }: Props) {
       setShowSuccess(true);
       setForm({ ...DEFAULT_FORM, classId: form.classId });
       setShowAddForm(false);
-      refresh();
-      if (!selectedClass) {
-        fetchAllStudents();
-      }
-      bumpAfterMutation();
+
+      // Defer heavy list refresh + router refresh so the main thread stays responsive (avoids "Page unresponsive").
+      window.setTimeout(() => {
+        try {
+          void refresh();
+          if (!selectedClass) void fetchAllStudents();
+          bumpAfterMutation();
+        } catch {
+          /* ignore */
+        }
+      }, 0);
     } catch (e) {
       const message =
         e instanceof Error && e.message

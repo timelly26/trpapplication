@@ -125,6 +125,8 @@ export const authOptions: NextAuthOptions = {
     // Keep schoolId/allowedFeatures/image in sync, but NOT on every request.
     // The jwt callback runs very frequently (every getServerSession / /api/auth/session),
     // so doing a DB query each time will exhaust small connection pools in production.
+    // Do NOT treat missing profile image as "must sync" — many users have no photoUrl,
+    // and that would run prisma.user.findUnique on EVERY request (JWT runs per getServerSession).
     const shouldSyncFromDb = (() => {
       if (!token.id) return false;
       const now = Date.now();
@@ -132,8 +134,7 @@ export const authOptions: NextAuthOptions = {
       const stale = now - last > 5 * 60 * 1000; // 5 minutes
       const missingCritical =
         token.schoolId == null ||
-        token.allowedFeatures == null ||
-        (token as any).image == null;
+        token.allowedFeatures == null;
       return stale || missingCritical;
     })();
 
