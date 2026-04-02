@@ -34,7 +34,7 @@ const preloadClasses = () => {
   if (classesCache) return Promise.resolve(classesCache);
   if (classesPromise) return classesPromise;
 
-  classesPromise = fetch("/api/class/list", { cache: "no-store" })
+  classesPromise = fetch("/api/class/list", { cache: "no-store", credentials: "include" })
     .then(async (res) => {
       if (!res.ok) return null;
       const data: ClassesListResponse = await res.json();
@@ -317,7 +317,8 @@ export default function useStudentPage({ classes = [], reload }: Props) {
   const fetchAllStudents = async (options?: { silent?: boolean }) => {
     if (!options?.silent) setAllLoading(true);
     try {
-      const res = await fetch("/api/student/list", { cache: "no-store" });
+      // Avoid pulling huge datasets; fetch only most recent students.
+      const res = await fetch("/api/student/list?take=300", { cache: "no-store", credentials: "include" });
       const data: StudentsListResponse = await res.json();
       if (!res.ok) return;
       setAllStudents(data.students || []);
@@ -499,10 +500,11 @@ export default function useStudentPage({ classes = [], reload }: Props) {
       }
       bumpAfterMutation();
     } catch (e) {
-      // api() already shows toast with server message on 4xx/5xx; only show generic on network/unknown errors
-      if (!(e instanceof Error) || !e.message) {
-        toast.error("Something went wrong while adding student");
-      }
+      const message =
+        e instanceof Error && e.message
+          ? e.message
+          : "Something went wrong while adding student";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -515,7 +517,7 @@ export default function useStudentPage({ classes = [], reload }: Props) {
 
   const handleUpload = async () => {
     if (!uploadFile) {
-      const message = "Please select an Excel file";
+      const message = "Please select an Excel/CSV file";
       toast.error(message);
       throw new Error(message);
     }
@@ -528,6 +530,7 @@ export default function useStudentPage({ classes = [], reload }: Props) {
 
       const uploadRes = await fetch("/api/student/bulk-upload", {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
 

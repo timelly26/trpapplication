@@ -94,9 +94,14 @@ export default function AppHeader({ title, profile, hideSearchAndNotifications =
   const displayName = (liveProfile?.name && liveProfile.name.trim())
     ? liveProfile.name
     : baseProfile.name;
-  const avatarUrl = (liveProfile?.image != null && liveProfile.image !== "")
+  const avatarUrlRaw = (liveProfile?.image != null && liveProfile.image !== "")
     ? liveProfile.image
     : baseProfile.image;
+  const avatarUrl =
+    typeof avatarUrlRaw === "string" &&
+    avatarUrlRaw.includes("/storage/v1/object/")
+      ? `/api/media?url=${encodeURIComponent(avatarUrlRaw)}`
+      : avatarUrlRaw;
 
   const refreshLiveProfile = useCallback(async () => {
     try {

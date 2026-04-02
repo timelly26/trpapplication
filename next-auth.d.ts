@@ -33,5 +33,6 @@ declare module "next-auth/jwt" {
     studentId?: string | null;
     allowedFeatures?: string[];
     schoolIsActive?: boolean;
+    image?: string | null;
   }
 }

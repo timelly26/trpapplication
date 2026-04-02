@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const isDev = process.env.NODE_ENV !== "production";
+    const schoolId = (session.user as { schoolId?: string | null })?.schoolId ?? null;
 
     if (!supabaseAdmin && !isDev) {
       return NextResponse.json(
@@ -111,7 +112,10 @@ export async function POST(req: Request) {
     }
 
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").slice(0, 80);
-    const storagePath = `${folder}/${Date.now()}-${safeName}`;
+    // Multi-tenant storage isolation: keep each school's uploads in its own prefix.
+    // For superadmin/global uploads (no schoolId), store under "global/".
+    const tenantPrefix = schoolId && String(schoolId).trim() ? `schools/${schoolId}` : "global";
+    const storagePath = `${tenantPrefix}/${folder}/${Date.now()}-${safeName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
     let data:
       | {

@@ -17,6 +17,12 @@ export async function GET(req: Request) {
     const role = searchParams.get("role");
 
     const schoolId = session.user.schoolId;
+    if (!schoolId) {
+      return NextResponse.json(
+        { message: "School not found in session" },
+        { status: 400 }
+      );
+    }
 
     const where: any = {
       schoolId,

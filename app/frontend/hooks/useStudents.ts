@@ -12,6 +12,7 @@ export function useStudents(classId: string) {
       try {
         const res = await fetch(`/api/class/students?classId=${classId}`, {
           cache: "no-store",
+          credentials: "include",
         });
         const data = await res.json();
         setStudents(data.students || []);

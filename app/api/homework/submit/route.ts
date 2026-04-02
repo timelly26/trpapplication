@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
     const student = await prisma.student.findUnique({
       where: { id: session.user.studentId },
-      select: { classId: true },
+      select: { classId: true, schoolId: true },
     });
 
     if (!student || student.classId !== homework.classId) {
@@ -71,13 +71,12 @@ export async function POST(req: Request) {
       },
     });
 
-    let schoolId = session.user.schoolId;
-    if (!schoolId) {
-      const studentData = await prisma.student.findUnique({
-        where: { id: session.user.studentId },
-        select: { schoolId: true, classId: true },
-      });
-      schoolId = studentData?.schoolId ?? null;
+    const effectiveSchoolId = session.user.schoolId ?? student.schoolId ?? null;
+    if (effectiveSchoolId && homework.class?.schoolId && homework.class.schoolId !== effectiveSchoolId) {
+      return NextResponse.json(
+        { message: "You are not allowed to submit homework for another school" },
+        { status: 403 }
+      );
     }
 
     if (existingSubmission) {

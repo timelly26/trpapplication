@@ -157,9 +157,14 @@ export default function AppSidebar({ menuItems, profile, activeTab = "dashboard"
     ? liveProfile.name
     : baseProfile.name;
   const subtitle = liveProfile?.subtitle ?? baseProfile.subtitle;
-  const avatarUrl = (liveProfile?.image != null && liveProfile.image !== "")
+  const avatarUrlRaw = (liveProfile?.image != null && liveProfile.image !== "")
     ? liveProfile.image
     : baseProfile.image;
+  const avatarUrl =
+    typeof avatarUrlRaw === "string" &&
+    avatarUrlRaw.includes("/storage/v1/object/")
+      ? `/api/media?url=${encodeURIComponent(avatarUrlRaw)}`
+      : avatarUrlRaw;
 
   // Only filter menu items for TEACHER role. Other roles see full menu.
   const allowedFeatures = (session?.user as any)?.allowedFeatures ?? [];

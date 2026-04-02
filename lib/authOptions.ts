@@ -32,6 +32,7 @@ export const authOptions: NextAuthOptions = {
               role: true,
               schoolId: true,
               mobile: true,
+              photoUrl: true,
               allowedFeatures: true,
               student: { select: { id: true, schoolId: true } },
               assignedClasses: true,
@@ -80,6 +81,7 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             name: user.name,
             email: user.email,
+            image: user.photoUrl ?? null,
             role: user.role,
             schoolId: user.schoolId,
             mobile: user.mobile,
@@ -116,6 +118,7 @@ export const authOptions: NextAuthOptions = {
       token.mobile = user.mobile;
       token.studentId = user.studentId;
       token.allowedFeatures = user.allowedFeatures ?? [];
+      token.image = (user as { image?: string | null }).image ?? null;
     }
 
     // Keep schoolId and allowedFeatures in sync (single query)
@@ -125,6 +128,7 @@ export const authOptions: NextAuthOptions = {
         select: {
           schoolId: true,
           allowedFeatures: true,
+          photoUrl: true,
           student: { select: { schoolId: true } },
           adminSchools: { select: { id: true } },
           teacherSchools: { select: { id: true } },
@@ -142,6 +146,7 @@ export const authOptions: NextAuthOptions = {
         if (dbUser.allowedFeatures?.length !== undefined) {
           token.allowedFeatures = dbUser.allowedFeatures;
         }
+        token.image = dbUser.photoUrl ?? token.image ?? null;
         token.schoolIsActive = true;
       }
     }
@@ -159,6 +164,7 @@ export const authOptions: NextAuthOptions = {
       studentId: token.studentId as string | null,
       allowedFeatures: (token.allowedFeatures as string[]) ?? [],
       schoolIsActive: token.schoolIsActive as boolean | undefined,
+      image: (token as { image?: string | null }).image ?? session.user?.image ?? null,
     };
 
     return session;

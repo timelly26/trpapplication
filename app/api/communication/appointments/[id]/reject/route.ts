@@ -44,6 +44,13 @@ export async function POST(_req: Request, context: RejectParams) {
       );
     }
 
+    if (session.user.schoolId && appointment.schoolId && appointment.schoolId !== session.user.schoolId) {
+      return NextResponse.json(
+        { message: "Not allowed to reject appointments from another school" },
+        { status: 403 }
+      );
+    }
+
     const updated = await prisma.appointment.update({
       where: { id: appointmentId },
       data: { status: "REJECTED" },
