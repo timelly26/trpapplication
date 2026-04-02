@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, Search, Settings } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SectionHeader from "./SectionHeader";
@@ -73,23 +73,38 @@ export default function AppHeader({ title, profile, hideSearchAndNotifications =
     ]
   );
 
+  const unreadAbortRef = useRef<AbortController | null>(null);
+  const unreadInFlightRef = useRef(false);
+
   const fetchUnreadCount = useCallback(async () => {
     if (hideSearchAndNotifications) return;
+    if (unreadInFlightRef.current) return;
+    unreadInFlightRef.current = true;
+    unreadAbortRef.current?.abort();
+    const controller = new AbortController();
+    unreadAbortRef.current = controller;
     try {
-      const res = await fetch("/api/notifications?take=1", { credentials: "include" });
+      const res = await fetch("/api/notifications?take=1", { credentials: "include", signal: controller.signal });
       const data = await res.json();
       if (res.ok && typeof data.unreadCount === "number") {
         setUnreadCount(data.unreadCount);
       }
     } catch {
       // ignore
+    } finally {
+      unreadInFlightRef.current = false;
     }
   }, [hideSearchAndNotifications]);
 
   useEffect(() => {
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 60000); // refresh every 60s
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      unreadAbortRef.current?.abort();
+      unreadAbortRef.current = null;
+      unreadInFlightRef.current = false;
+    };
   }, [fetchUnreadCount]);
   const displayName = (liveProfile?.name && liveProfile.name.trim())
     ? liveProfile.name
