@@ -16,6 +16,13 @@ import StatusBadge from "./schooladmincomponents/StatusBadge";
 import UsersMobileList from "./schooladmincomponents/UsersMobileList";
 import InlinePagination from "./schooladmincomponents/InlinePagination";
 import { IUser } from "@/app/frontend/constants/addUserTable";
+
+export {
+  validateUserForm,
+  type UserFormErrors,
+} from "./schooladmincomponents/userFormValidation";
+
+/** User create/edit UI lives in `UserForm`; field rules are in `userFormValidation.ts`. */
 export default function AddUser() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -28,6 +35,7 @@ export default function AddUser() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [listNonce, setListNonce] = useState(0);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     userId: string;
@@ -68,7 +76,7 @@ export default function AddUser() {
       })
       .catch((err) => console.error("Failed to fetch users:", err))
       .finally(() => setLoading(false));
-  }, [page, debouncedSearch, activeTab]);
+  }, [page, debouncedSearch, activeTab, listNonce]);
 
   const handleEdit = (user: IUser) => {
     router.push(`?tab=add-user&view=add&userId=${user.id}`);
@@ -94,8 +102,13 @@ export default function AddUser() {
       }
 
       setDeleteModal({ isOpen: false, userId: "", userName: "" });
-      setUsers((prev) => prev.filter((u) => u.id !== deleteModal.userId));
+      setListNonce((n) => n + 1);
       setPage(1);
+      try {
+        router.refresh();
+      } catch {
+        /* noop */
+      }
     } catch (error) {
       throw error;
     }

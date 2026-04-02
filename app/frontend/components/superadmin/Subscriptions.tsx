@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreditCard, Pencil, Search, ToggleLeft, ToggleRight } from "lucide-react";
 import PageHeader from "../common/PageHeader";
@@ -55,6 +56,7 @@ function StatusPill({ active }: { active: boolean }) {
 }
 
 export default function Subscriptions() {
+  const router = useRouter();
   const [rows, setRows] = useState<SubscriptionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,6 +142,12 @@ export default function Subscriptions() {
             : r
         )
       );
+      void fetchSchools(debouncedSearch);
+      try {
+        router.refresh();
+      } catch {
+        /* noop */
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error updating subscription");
     } finally {

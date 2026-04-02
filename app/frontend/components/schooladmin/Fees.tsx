@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import PageHeader from "../common/PageHeader";
 import FeeStatCards from "./fees/FeeStatCards";
 import OfflinePaymentForm from "./fees/OfflinePaymentForm";
@@ -13,6 +14,7 @@ import type { Class, Student, FeeSummary, FeeRecord, FeeStructure, ExtraFee } fr
 import Spinner from "../common/Spinner";
 
 export default function FeesTab() {
+  const router = useRouter();
   const [fees, setFees] = useState<FeeRecord[]>([]);
   const [stats, setStats] = useState<FeeSummary | null>(null);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -58,6 +60,17 @@ export default function FeesTab() {
     fetchData();
   }, []);
 
+  const reloadAfterMutation = useCallback(() => {
+    void (async () => {
+      await fetchData();
+      try {
+        router.refresh();
+      } catch {
+        /* noop */
+      }
+    })();
+  }, [router]);
+
   if (loading) {
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
@@ -82,25 +95,25 @@ export default function FeesTab() {
             structures={structures}
             extraFees={extraFees}
             students={students}
-            onSuccess={fetchData}
+            onSuccess={reloadAfterMutation}
           />
-          <AddExtraFeeForm classes={classes} students={students} onSuccess={fetchData} />
+          <AddExtraFeeForm classes={classes} students={students} onSuccess={reloadAfterMutation} />
         </div>
 
         <FeeStructureConfig
           classes={classes}
           structures={structures}
-          onSuccess={fetchData}
+          onSuccess={reloadAfterMutation}
         />
 
         <ExtraFeesList
           extraFees={extraFees}
           classes={classes}
           students={students}
-          onSuccess={fetchData}
+          onSuccess={reloadAfterMutation}
         />
 
-        <FeeTransactionsList students={students} onSuccess={fetchData} />
+        <FeeTransactionsList students={students} onSuccess={reloadAfterMutation} />
 
         <FeeRecordsTable fees={fees} classes={classes} />
       </div>

@@ -1,5 +1,5 @@
-
 "use client";
+import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import Spinner from "../common/Spinner";
 import { useEffect, useMemo, useState } from "react";
@@ -41,6 +41,7 @@ interface Leave {
 /* ---------------- MAIN ---------------- */
 
 export default function SchoolTeacherLeavesTab() {
+  const router = useRouter();
   const [pendingLeaves, setPendingLeaves] = useState<Leave[]>([]);
   const [allLeaves, setAllLeaves] = useState<Leave[]>([]);
   const [activeTab, setActiveTab] = useState<Status>("PENDING");
@@ -50,31 +51,6 @@ export default function SchoolTeacherLeavesTab() {
   const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
   const [conditionalMessage, setConditionalMessage] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
-
-  const applyLeaveStatusUpdate = useCallback(
-    (id: string, nextStatus: Status, remarks?: string | null) => {
-      const nowIso = new Date().toISOString();
-
-      setPendingLeaves((prev) => prev.filter((leave) => leave.id !== id));
-      setAllLeaves((prev) =>
-        prev.map((leave) =>
-          leave.id === id
-            ? {
-                ...leave,
-                status: nextStatus,
-                remarks: remarks ?? leave.remarks ?? null,
-                approvedAt:
-                  nextStatus === "APPROVED" || nextStatus === "CONDITIONALLY_APPROVED"
-                    ? nowIso
-                    : leave.approvedAt ?? null,
-                updatedAt: nowIso,
-              }
-            : leave
-        )
-      );
-    },
-    []
-  );
 
   /* ---------------- DATE HELPERS ---------------- */
 
@@ -184,7 +160,12 @@ export default function SchoolTeacherLeavesTab() {
       });
 
       if (res.ok) {
-        applyLeaveStatusUpdate(id, "APPROVED");
+        await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
+        try {
+          router.refresh();
+        } catch {
+          /* noop */
+        }
       } else {
         await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
       }
@@ -209,11 +190,12 @@ export default function SchoolTeacherLeavesTab() {
       });
 
       if (res.ok) {
-        applyLeaveStatusUpdate(
-          selectedLeaveId,
-          "CONDITIONALLY_APPROVED",
-          conditionalMessage.trim()
-        );
+        await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
+        try {
+          router.refresh();
+        } catch {
+          /* noop */
+        }
       } else {
         await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
       }
@@ -237,7 +219,12 @@ export default function SchoolTeacherLeavesTab() {
       });
 
       if (res.ok) {
-        applyLeaveStatusUpdate(id, "REJECTED", "Rejected by admin");
+        await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
+        try {
+          router.refresh();
+        } catch {
+          /* noop */
+        }
       } else {
         await Promise.all([loadPendingLeaves(), loadAllLeaves()]);
       }

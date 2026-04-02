@@ -12,6 +12,9 @@ interface InputFieldProps {
   icon?: React.ReactNode;
   required?: boolean;
   bgColor?: "black" | "white";
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  autoComplete?: string;
+  error?: string;
 }
 
 export default function InputField({
@@ -22,7 +25,10 @@ export default function InputField({
   placeholder = "",
   icon,
   required = false,
-  bgColor='black'
+  bgColor = "black",
+  inputMode,
+  autoComplete,
+  error,
 }: InputFieldProps) {
   return (
     <div>
@@ -39,11 +45,23 @@ export default function InputField({
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full ${icon ? "pl-11" : "pl-4"} pr-4 py-3 ${bgColor==="black"?`bg-black/20`:`bg-white/5`} border border-white/10 rounded-xl 
-          focus:outline-none focus:ring-1 focus:ring-lime-400/50 text-gray-400`}
+          inputMode={inputMode}
+          autoComplete={autoComplete}
+          aria-invalid={Boolean(error)}
+          className={`w-full ${icon ? "pl-11" : "pl-4"} pr-4 py-3 ${bgColor==="black"?`bg-black/20`:`bg-white/5`} border rounded-xl 
+          focus:outline-none focus:ring-1 text-gray-400 ${
+            error
+              ? "border-red-500/60 focus:ring-red-400/40"
+              : "border-white/10 focus:ring-lime-400/50"
+          }`}
           placeholder={placeholder}
         />
       </div>
+      {error ? (
+        <p className="text-xs text-red-400 mt-1.5" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

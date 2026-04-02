@@ -27,6 +27,12 @@ const renderError = (errors: StudentFormErrors, key: keyof StudentFormState) =>
     <p className="text-xs text-red-400 mt-1">{errors[key]}</p>
   ) : null;
 
+/** Digits only, capped length (Aadhaar, phone, PIN, etc.). */
+const digitsCap =
+  (max: number) =>
+  (value: string): string =>
+    value.replace(/\D/g, "").slice(0, max);
+
 export default function AddStudentForm({
   form,
   errors,
@@ -66,24 +72,27 @@ export default function AddStudentForm({
           <InputField
             label="Student ID"
             value={form.rollNo}
-            onChange={(value) => onFieldChange("rollNo", value)}
+            onChange={(value) => onFieldChange("rollNo", value.slice(0, 40))}
             placeholder="e.g. STU001"
             bgColor="white"
           />
+          {renderError(errors, "rollNo")}
         </div>
         <div>
           <InputField
             label="Aadhaar Number*"
             value={form.aadhaarNo}
-            onChange={(value) => onFieldChange("aadhaarNo", value)}
-            placeholder="12-digit Aadhaar"
+            onChange={(value) => onFieldChange("aadhaarNo", digitsCap(12)(value))}
+            placeholder="12 digits"
+            inputMode="numeric"
+            autoComplete="off"
             bgColor="white"
           />
           {renderError(errors, "aadhaarNo")}
         </div>
         <div>
           <SelectInput
-            label="Gender"
+            label="Gender*"
             value={form.gender}
             onChange={(value) => onFieldChange("gender", value)}
             options={[
@@ -92,6 +101,8 @@ export default function AddStudentForm({
               { label: "Female", value: "Female" },
               { label: "Other", value: "Other" },
             ]}
+            bgColor="white"
+            error={errors.gender}
           />
         </div>
         <div>
@@ -115,11 +126,13 @@ export default function AddStudentForm({
         </div>
         <div>
           <SelectInput
-            label="Class"
+            label="Class*"
             value={form.classId}
             onChange={(value) => onFieldChange("classId", value)}
             options={classOptions}
             disabled={classesLoading || classOptions.length <= 1}
+            bgColor="white"
+            error={errors.classId}
           />
         </div>
         <div>
@@ -129,6 +142,7 @@ export default function AddStudentForm({
             onChange={(value) => onFieldChange("section", value)}
             options={sectionOptions}
             disabled={classesLoading || sectionOptions.length <= 1}
+            bgColor="white"
           />
         </div>
         <div>
@@ -140,6 +154,7 @@ export default function AddStudentForm({
               { label: "Active", value: "Active" },
               { label: "Inactive", value: "Inactive" },
             ]}
+            bgColor="white"
           />
         </div>
         <div>
@@ -232,39 +247,47 @@ export default function AddStudentForm({
             <InputField
               label="Contact Number*"
               value={form.phoneNo}
-              onChange={(value) => onFieldChange("phoneNo", value)}
+              onChange={(value) => onFieldChange("phoneNo", digitsCap(10)(value))}
               placeholder="10 digits"
+              inputMode="numeric"
+              autoComplete="tel"
               bgColor="white"
             />
             {renderError(errors, "phoneNo")}
           </div>
           <div>
             <InputField
+              label="Email (optional)"
+              value={form.email}
+              onChange={(value) => onFieldChange("email", value)}
+              placeholder="parent@example.com"
+              type="email"
+              autoComplete="email"
+              bgColor="white"
+            />
+            {renderError(errors, "email")}
+          </div>
+          <div>
+            <InputField
               label="Parent WhatsApp"
               value={form.parentWhatsapp}
-              onChange={(value) => onFieldChange("parentWhatsapp", value)}
+              onChange={(value) => onFieldChange("parentWhatsapp", digitsCap(10)(value))}
               placeholder="10 digits"
+              inputMode="numeric"
               bgColor="white"
             />
+            {renderError(errors, "parentWhatsapp")}
           </div>
-          {/* <div>
-            <InputField
-              label="Aadhaar Number*"
-              value={form.aadhaarNo}
-              onChange={(value) => onFieldChange("aadhaarNo", value.replace(/\D/g, "").slice(0, 12))}
-              placeholder="12 digits"
-              bgColor="white"
-            />
-            {renderError(errors, "aadhaarNo")}
-          </div> */}
           <div>
             <InputField
               label="Bank Account No"
               value={form.bankAccountNo}
-              onChange={(value) => onFieldChange("bankAccountNo", value)}
-              placeholder="Account number"
+              onChange={(value) => onFieldChange("bankAccountNo", digitsCap(18)(value))}
+              placeholder="9–18 digits"
+              inputMode="numeric"
               bgColor="white"
             />
+            {renderError(errors, "bankAccountNo")}
           </div>
           <div className="md:col-span-2">
             <InputField
