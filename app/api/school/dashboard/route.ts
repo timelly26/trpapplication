@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/db";
+import { purgeExpiredNewsFeeds } from "@/lib/newsfeedRetention";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -57,6 +58,8 @@ export async function GET() {
         );
       }
     }
+
+    await purgeExpiredNewsFeeds();
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

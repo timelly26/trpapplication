@@ -212,6 +212,8 @@ export async function GET(_req: Request, context: RouteParams) {
         motherOccupation: student.occupation ?? "",
         fatherPhone: student.phoneNo ?? "",
         previousSchool: student.previousSchool ?? "",
+        applicationFee: student.applicationFee ?? null,
+        admissionFee: student.admissionFee ?? null,
         // status isn’t stored on the model yet; show Active by default
         status: "Active",
         class: student.class
@@ -310,6 +312,14 @@ export async function PUT(req: Request, context: RouteParams) {
     const address = typeof body.address === "string" ? body.address.trim() || null : undefined;
     const gender = typeof body.gender === "string" ? body.gender.trim() || null : undefined;
     const previousSchool = typeof body.previousSchool === "string" ? body.previousSchool.trim() || null : undefined;
+    const parseOptFee = (v: unknown): number | null | undefined => {
+      if (v === undefined) return undefined;
+      if (v === null || v === "") return null;
+      const n = typeof v === "number" ? v : Number(String(v).trim());
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    };
+    const applicationFee = parseOptFee(body.applicationFee);
+    const admissionFee = parseOptFee(body.admissionFee);
 
     if (name !== undefined && name.length < 2) {
       return NextResponse.json({ message: "Name must be at least 2 characters" }, { status: 400 });
@@ -338,6 +348,8 @@ export async function PUT(req: Request, context: RouteParams) {
     if (address !== undefined) studentUpdate.address = address;
     if (gender !== undefined) studentUpdate.gender = gender;
     if (previousSchool !== undefined) studentUpdate.previousSchool = previousSchool;
+    if (applicationFee !== undefined) studentUpdate.applicationFee = applicationFee;
+    if (admissionFee !== undefined) studentUpdate.admissionFee = admissionFee;
 
     if (Object.keys(userUpdate).length > 0 && student.user) {
       await prisma.user.update({

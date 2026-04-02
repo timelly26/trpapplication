@@ -65,12 +65,6 @@ export default function StudentMobileCard({
             {getAge(student.dob)}
           </div>
         </div>
-        <div className="col-span-2 rounded-xl border border-white/10 bg-black/20 p-3">
-          <div className="text-[11px] text-white/50">Previous School</div>
-          <div className="text-sm font-semibold text-white">
-            {student.previousSchool || "-"}
-          </div>
-        </div>
       </div>
 
       <div className="mt-4 flex items-center gap-2">

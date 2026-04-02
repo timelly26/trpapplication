@@ -66,10 +66,6 @@ export default function StudentDetailsModal({ student, onClose, onEdit }: Props)
                 <p className="text-xs text-gray-500 mb-1">Age</p>
                 <p className="text-sm font-semibold text-gray-200">{getAge(student.dob)}</p>
               </div>
-              <div className="bg-white/5 rounded-lg p-3 border border-white/10 col-span-2">
-                <p className="text-xs text-gray-500 mb-1">Previous School</p>
-                <p className="text-sm font-semibold text-gray-200">{student.previousSchool || "-"}</p>
-              </div>
             </div>
           </div>
 

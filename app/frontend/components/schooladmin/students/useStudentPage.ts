@@ -56,8 +56,6 @@ const DEFAULT_FORM: StudentFormState = {
   rollNo: "",
   gender: "",
   dob: "",
-  previousSchool: "",
-  previousSchoolAddress: "",
   classId: "",
   section: "",
   status: "Active",
@@ -69,18 +67,18 @@ const DEFAULT_FORM: StudentFormState = {
   email: "",
   address: "",
   aadhaarNo: "",
-  parentAadharNo: "",
   parentWhatsapp: "",
   bankAccountNo: "",
   totalFee: "",
   discountPercent: "",
+  applicationFee: "",
+  admissionFee: "",
   houseNo: "",
   street: "",
   city: "",
   town: "",
   state: "",
   pinCode: "",
-  firstLanguage: "",
   nationality: "Indian",
   languagesAtHome: "",
   caste: "",
@@ -473,38 +471,12 @@ export default function useStudentPage({ classes = [], reload }: Props) {
         discountPercent: form.discountPercent
           ? Number(form.discountPercent)
           : 0,
+        applicationFee: form.applicationFee.trim()
+          ? Number(form.applicationFee)
+          : null,
+        admissionFee: form.admissionFee.trim() ? Number(form.admissionFee) : null,
         rollNo: form.rollNo?.trim() || undefined,
         gender: form.gender?.trim() || undefined,
-        previousSchool: form.previousSchool?.trim() || undefined,
-        previousSchoolAddress: form.previousSchoolAddress?.trim() || undefined,
-        officeAddress: form.officeAddress?.trim() || undefined,
-        parentAadharNo: form.parentAadharNo.trim()
-          ? digitsOnly(form.parentAadharNo)
-          : undefined,
-        parentWhatsapp: form.parentWhatsapp.trim()
-          ? digitsOnly(form.parentWhatsapp)
-          : undefined,
-        bankAccountNo: form.bankAccountNo.replace(/\s/g, "") || undefined,
-        houseNo: form.houseNo.trim() || undefined,
-        street: form.street.trim() || undefined,
-        city: form.city.trim() || undefined,
-        town: form.town.trim() || undefined,
-        state: form.state.trim() || undefined,
-        pinCode: form.pinCode.trim() ? digitsOnly(form.pinCode) : undefined,
-        firstLanguage: form.firstLanguage.trim() || undefined,
-        nationality: form.nationality.trim() || undefined,
-        languagesAtHome: form.languagesAtHome.trim() || undefined,
-        caste: form.caste.trim() || undefined,
-        religion: form.religion.trim() || undefined,
-        emergencyFatherNo: form.emergencyFatherNo.trim()
-          ? digitsOnly(form.emergencyFatherNo)
-          : undefined,
-        emergencyMotherNo: form.emergencyMotherNo.trim()
-          ? digitsOnly(form.emergencyMotherNo)
-          : undefined,
-        emergencyGuardianNo: form.emergencyGuardianNo.trim()
-          ? digitsOnly(form.emergencyGuardianNo)
-          : undefined,
       });
 
       const data = await res.json();
@@ -625,7 +597,10 @@ export default function useStudentPage({ classes = [], reload }: Props) {
         phoneNo: editForm.phoneNo.trim() || undefined,
         address: editForm.address.trim() || undefined,
         gender: editForm.gender.trim() || undefined,
-        previousSchool: editForm.previousSchool.trim() || undefined,
+        applicationFee: editForm.applicationFee.trim()
+          ? Number(editForm.applicationFee)
+          : null,
+        admissionFee: editForm.admissionFee.trim() ? Number(editForm.admissionFee) : null,
       });
       const data = await res.json();
       if (!res.ok) {

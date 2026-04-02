@@ -67,13 +67,6 @@ export const buildStudentColumns = ({
     ),
   },
   {
-    header: "Prev. School",
-    render: (row) => (
-      <span className="text-sm text-gray-300">{row.previousSchool || "-"}</span>
-    ),
-    hideOnMobile: true,
-  },
-  {
     header: "Status",
     render: (row) => (
       <span className="px-3 py-1 rounded-full text-xs font-semibold border bg-lime-400/10

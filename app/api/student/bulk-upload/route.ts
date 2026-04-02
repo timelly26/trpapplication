@@ -179,6 +179,10 @@ export async function POST(req: Request) {
         const discountPercent = parseOptionalNumber(
           row.discountPercent ?? row["Discount %"] ?? 0
         );
+        const applicationFee = parseOptionalNumber(
+          row.applicationFee ?? row["Application Fee"]
+        );
+        const admissionFee = parseOptionalNumber(row.admissionFee ?? row["Admission Fee"]);
         const rawDob = row.dob ?? row.dateOfBirth ?? row["Date of Birth"];
 
         console.log("[student bulk upload] Parsed row", {
@@ -313,6 +317,12 @@ export async function POST(req: Request) {
                   classId,
                   gender,
                   previousSchool,
+                  ...(applicationFee !== null && Number.isFinite(applicationFee)
+                    ? { applicationFee }
+                    : {}),
+                  ...(admissionFee !== null && Number.isFinite(admissionFee)
+                    ? { admissionFee }
+                    : {}),
                 },
               });
 
@@ -438,6 +448,12 @@ export async function POST(req: Request) {
                 classId,
                 gender,
                 previousSchool,
+                applicationFee:
+                  applicationFee != null && Number.isFinite(applicationFee)
+                    ? applicationFee
+                    : null,
+                admissionFee:
+                  admissionFee != null && Number.isFinite(admissionFee) ? admissionFee : null,
               },
             });
 

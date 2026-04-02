@@ -19,5 +19,7 @@ export interface IStudent {
   email: string;
   rollNo: string;
   phoneNo: string;
+  applicationFee?: number | null;
+  admissionFee?: number | null;
   user?: { email: string; name: string; id: string; photoUrl?: string | null };
 }

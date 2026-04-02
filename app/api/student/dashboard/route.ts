@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/db";
+import { purgeExpiredNewsFeeds } from "@/lib/newsfeedRetention";
 
 function getAcademicYearRange(seed = new Date()) {
   const year = seed.getFullYear();
@@ -41,6 +42,8 @@ export async function GET() {
     if (!student) {
       return NextResponse.json({ message: "Student not found" }, { status: 404 });
     }
+
+    await purgeExpiredNewsFeeds();
 
     const { start, end } = getAcademicYearRange();
 

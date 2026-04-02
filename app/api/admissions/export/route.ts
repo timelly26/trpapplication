@@ -97,6 +97,8 @@ export async function GET(req: Request) {
         class: { select: { name: true, section: true } },
         totalFee: true,
         discountPercent: true,
+        applicationFee: true,
+        admissionFee: true,
         nationality: true,
         languagesAtHome: true,
         caste: true,
@@ -140,6 +142,8 @@ export async function GET(req: Request) {
       "First Language": r.firstLanguage,
       "Total Fee": r.totalFee ?? "",
       "Discount %": r.discountPercent ?? 0,
+      "Application Fee": r.applicationFee ?? "",
+      "Admission Fee": r.admissionFee ?? "",
       Nationality: r.nationality,
       "Languages at Home": r.languagesAtHome,
       Caste: r.caste ?? "",
@@ -175,6 +179,8 @@ export async function GET(req: Request) {
       section: r.class?.section ?? r.section ?? "",
       totalFee: r.totalFee ?? "",
       discountPercent: r.discountPercent ?? 0,
+      applicationFee: r.applicationFee ?? "",
+      admissionFee: r.admissionFee ?? "",
       phoneNo: r.parentPhone,
       email: `${emailLocalPartFromFullName(
         `${r.firstName} ${r.middleName ? `${r.middleName} ` : ""}${r.lastName}`.trim()

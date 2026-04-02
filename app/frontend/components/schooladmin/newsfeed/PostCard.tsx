@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { formatRelativeTime } from "../../../utils/format";
+import { downloadImageFromUrl } from "../../../utils/downloadImage";
 import type { NewsFeedItem } from "../../../hooks/useNewsFeeds";
 
 interface PostCardProps {
@@ -18,7 +19,19 @@ export default function PostCard({ post, onLike, isLiking = false }: PostCardPro
 
   const images = (post.photos && post.photos.length > 0) ? post.photos : (post.photo ? [post.photo] : []);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const hasMultiple = images.length > 1;
+
+  const handleDownloadImage = async (idx: number) => {
+    const url = images[idx];
+    if (!url) return;
+    setDownloadingIndex(idx);
+    try {
+      await downloadImageFromUrl(url, `newsfeed-${post.id}-${idx + 1}`);
+    } finally {
+      setDownloadingIndex(null);
+    }
+  };
 
   const goPrev = () => setCurrentIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
   const goNext = () => setCurrentIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
@@ -30,7 +43,7 @@ export default function PostCard({ post, onLike, isLiking = false }: PostCardPro
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 flex-shrink-0 overflow-hidden ring-2 ring-white/10">
             <div className="w-full h-full flex items-center justify-center text-white/90 text-sm font-semibold">
-              <img src= { photoUrl} alt={authorName} className="w-full h-full object-cover" />
+              <img src={photoUrl} alt={authorName} className="w-full h-full object-cover" />
             </div>
           </div>
           <div className="min-w-0">
@@ -45,6 +58,16 @@ export default function PostCard({ post, onLike, isLiking = false }: PostCardPro
 
       {images.length > 0 && (
         <div className="relative w-full bg-black/20 group">
+          <button
+            type="button"
+            onClick={() => handleDownloadImage(currentIndex)}
+            disabled={downloadingIndex === currentIndex}
+            className="absolute right-2 top-2 z-10 w-9 h-9 rounded-full bg-black/55 hover:bg-black/75 text-white flex items-center justify-center transition opacity-90 hover:opacity-100 disabled:opacity-50"
+            aria-label="Download image"
+            title="Download image"
+          >
+            <Download className="w-4 h-4" />
+          </button>
           <img
             src={images[currentIndex]}
             alt=""

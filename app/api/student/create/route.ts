@@ -94,7 +94,15 @@ export async function POST(req: Request) {
       emergencyFatherNo,
       emergencyMotherNo,
       emergencyGuardianNo,
+      applicationFee: applicationFeeInput,
+      admissionFee: admissionFeeInput,
     } = body;
+
+    const parseOptFee = (v: unknown): number | null => {
+      if (v === null || v === undefined || v === "") return null;
+      const n = typeof v === "number" ? v : Number(String(v).trim());
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    };
 
     let effectiveName = name;
     let effectiveFatherName = fatherName;
@@ -109,6 +117,9 @@ export async function POST(req: Request) {
     let effectiveRollNo = rollNo;
     let effectiveGenderInput = genderInput;
     let effectivePreviousSchoolInput = previousSchoolInput;
+
+    let effectiveApplicationFee = parseOptFee(applicationFeeInput);
+    let effectiveAdmissionFee = parseOptFee(admissionFeeInput);
 
     let applicationToLink: { id: string } | null = null;
     if (typeof applicationId === "string" && applicationId.trim()) {
@@ -134,6 +145,12 @@ export async function POST(req: Request) {
       effectiveAddressInput = `${app.houseNo}, ${app.street}, ${app.town ? `${app.town}, ` : ""}${app.city}, ${app.state} - ${app.pinCode}`;
       effectiveTotalFeeInput = app.totalFee ?? effectiveTotalFeeInput;
       effectiveDiscountPercentInput = app.discountPercent ?? effectiveDiscountPercentInput;
+      if (effectiveApplicationFee === null && app.applicationFee != null) {
+        effectiveApplicationFee = app.applicationFee;
+      }
+      if (effectiveAdmissionFee === null && app.admissionFee != null) {
+        effectiveAdmissionFee = app.admissionFee;
+      }
       effectiveGenderInput = app.gender === "MALE" ? "Male" : "Female";
       effectivePreviousSchoolInput = app.previousSchoolName;
       applicationToLink = { id: app.id };
@@ -401,6 +418,8 @@ export async function POST(req: Request) {
               typeof effectiveRollNo === "string" && effectiveRollNo.trim()
                 ? effectiveRollNo.trim()
                 : finalRollNo,
+            applicationFee: effectiveApplicationFee,
+            admissionFee: effectiveAdmissionFee,
           },
           include: {
             user: { select: { id: true, name: true, email: true } },
@@ -452,6 +471,8 @@ export async function POST(req: Request) {
               boardingType: "SEMI_RESIDENTIAL",
               totalFee,
               discountPercent: safeDiscount,
+              applicationFee: effectiveApplicationFee,
+              admissionFee: effectiveAdmissionFee,
               rollNo: typeof effectiveRollNo === "string" && effectiveRollNo.trim() ? effectiveRollNo.trim() : null,
               firstName: String(effectiveName).split(" ")[0] || "Student",
               middleName: null,
