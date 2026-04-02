@@ -62,6 +62,23 @@ export default function StudentEditPanel({
         />
       </div>
 
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <InputField
+          label="Application Fee (record only)"
+          value={form.applicationFee}
+          onChange={(value) => onFieldChange("applicationFee", value)}
+          placeholder="Optional"
+          type="number"
+        />
+        <InputField
+          label="Admission Fee (record only)"
+          value={form.admissionFee}
+          onChange={(value) => onFieldChange("admissionFee", value)}
+          placeholder="Optional"
+          type="number"
+        />
+      </div>
+
       <div className="mt-4 grid grid-cols-1 md:grid-cols-[1fr_1fr_1.4fr] gap-4 items-end">
         <SelectInput
           label="Class"

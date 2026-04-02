@@ -74,13 +74,29 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
         })
       : null;
 
+    let applicationNoForUpdate = optionalString(body.applicationNo);
+    if (!applicationNoForUpdate) {
+      const existingApp = await prisma.studentApplication.findFirst({
+        where: { id, schoolId },
+        select: { applicationNo: true },
+      });
+      applicationNoForUpdate = existingApp?.applicationNo ?? "";
+    }
+    if (!applicationNoForUpdate) {
+      return NextResponse.json({ message: "applicationNo is required" }, { status: 400 });
+    }
+
+    const aadharForParent = requiredString(body.aadharNo, "aadharNo").replace(/\D/g, "");
+    const parentAadharDefault =
+      aadharForParent.length >= 8 ? `${aadharForParent.slice(0, 8)}0000` : `${aadharForParent.padEnd(8, "0")}0000`;
+
     const updated = await prisma.studentApplication.update({
       where: { id },
       data: {
         classId,
         className: classMeta?.name ?? null,
         section: classMeta?.section ?? null,
-        applicationNo: requiredString(body.applicationNo, "applicationNo"),
+        applicationNo: applicationNoForUpdate,
         fedenaNo: optionalString(body.fedenaNo),
         admissionNo: optionalString(body.admissionNo),
         gradeSought: body.gradeSought,
@@ -97,13 +113,25 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
             : typeof body.discountPercent === "string" && body.discountPercent.trim()
             ? Number(body.discountPercent)
             : null,
+        applicationFee:
+          typeof body.applicationFee === "number"
+            ? body.applicationFee
+            : typeof body.applicationFee === "string" && String(body.applicationFee).trim()
+            ? Number(body.applicationFee)
+            : null,
+        admissionFee:
+          typeof body.admissionFee === "number"
+            ? body.admissionFee
+            : typeof body.admissionFee === "string" && String(body.admissionFee).trim()
+            ? Number(body.admissionFee)
+            : null,
         firstName: requiredString(body.firstName, "firstName"),
         middleName: optionalString(body.middleName),
         lastName: requiredString(body.lastName, "lastName"),
         gender: body.gender,
         dateOfBirth: dob,
         aadharNo: requiredString(body.aadharNo, "aadharNo"),
-        firstLanguage: requiredString(body.firstLanguage, "firstLanguage"),
+        firstLanguage: optionalString(body.firstLanguage) ?? "English",
         nationality: requiredString(body.nationality, "nationality"),
         languagesAtHome: requiredString(body.languagesAtHome, "languagesAtHome"),
         caste: optionalString(body.caste),
@@ -119,11 +147,11 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
         officeAddress: requiredString(body.officeAddress, "officeAddress"),
         parentPhone: requiredString(body.parentPhone, "parentPhone"),
         parentEmail: requiredString(body.parentEmail, "parentEmail"),
-        parentAadharNo: requiredString(body.parentAadharNo, "parentAadharNo"),
+        parentAadharNo: optionalString(body.parentAadharNo) ?? parentAadharDefault,
         parentWhatsapp: requiredString(body.parentWhatsapp, "parentWhatsapp"),
         bankAccountNo: requiredString(body.bankAccountNo, "bankAccountNo"),
-        previousSchoolName: requiredString(body.previousSchoolName, "previousSchoolName"),
-        previousSchoolAddress: requiredString(body.previousSchoolAddress, "previousSchoolAddress"),
+        previousSchoolName: optionalString(body.previousSchoolName) ?? "-",
+        previousSchoolAddress: optionalString(body.previousSchoolAddress) ?? "-",
         emergencyFatherNo: requiredString(body.emergencyFatherNo, "emergencyFatherNo"),
         emergencyMotherNo: requiredString(body.emergencyMotherNo, "emergencyMotherNo"),
         emergencyGuardianNo: requiredString(body.emergencyGuardianNo, "emergencyGuardianNo"),

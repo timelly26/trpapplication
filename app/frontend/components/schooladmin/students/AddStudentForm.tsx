@@ -114,15 +114,6 @@ export default function AddStudentForm({
           {renderError(errors, "dob")}
         </div>
         <div>
-          <InputField
-            label="Previous School Attended"
-            value={form.previousSchool}
-            onChange={(value) => onFieldChange("previousSchool", value)}
-            placeholder="Previous School Name"
-            bgColor="white"
-          />
-        </div>
-        <div>
           <SelectInput
             label="Class"
             value={form.classId}
@@ -172,6 +163,26 @@ export default function AddStudentForm({
             bgColor="white"
           />
           {renderError(errors, "discountPercent")}
+        </div>
+        <div>
+          <InputField
+            label="Application Fee (record only)"
+            value={form.applicationFee}
+            onChange={(value) => onFieldChange("applicationFee", value)}
+            placeholder="e.g. 500"
+            type="number"
+            bgColor="white"
+          />
+        </div>
+        <div>
+          <InputField
+            label="Admission Fee (record only)"
+            value={form.admissionFee}
+            onChange={(value) => onFieldChange("admissionFee", value)}
+            placeholder="e.g. 5000"
+            type="number"
+            bgColor="white"
+          />
         </div>
       </div>
 
@@ -248,15 +259,6 @@ export default function AddStudentForm({
           </div> */}
           <div>
             <InputField
-              label="Parent Aadhaar No"
-              value={form.parentAadharNo}
-              onChange={(value) => onFieldChange("parentAadharNo", value)}
-              placeholder="12-digit Aadhaar"
-              bgColor="white"
-            />
-          </div>
-          <div>
-            <InputField
               label="Bank Account No"
               value={form.bankAccountNo}
               onChange={(value) => onFieldChange("bankAccountNo", value)}
@@ -286,12 +288,10 @@ export default function AddStudentForm({
           <InputField label="Town" value={form.town} onChange={(v) => onFieldChange("town", v)} bgColor="white" />
           <InputField label="State" value={form.state} onChange={(v) => onFieldChange("state", v)} bgColor="white" />
           <InputField label="Pin Code" value={form.pinCode} onChange={(v) => onFieldChange("pinCode", v)} bgColor="white" />
-          <InputField label="First Language" value={form.firstLanguage} onChange={(v) => onFieldChange("firstLanguage", v)} bgColor="white" />
           <InputField label="Nationality" value={form.nationality} onChange={(v) => onFieldChange("nationality", v)} bgColor="white" />
           <InputField label="Languages at Home" value={form.languagesAtHome} onChange={(v) => onFieldChange("languagesAtHome", v)} bgColor="white" />
           <InputField label="Caste" value={form.caste} onChange={(v) => onFieldChange("caste", v)} bgColor="white" />
           <InputField label="Religion" value={form.religion} onChange={(v) => onFieldChange("religion", v)} bgColor="white" />
-          <InputField label="Previous School Address" value={form.previousSchoolAddress} onChange={(v) => onFieldChange("previousSchoolAddress", v)} bgColor="white" />
           <InputField label="Emergency Father No" value={form.emergencyFatherNo} onChange={(v) => onFieldChange("emergencyFatherNo", v)} bgColor="white" />
           <InputField label="Emergency Mother No" value={form.emergencyMotherNo} onChange={(v) => onFieldChange("emergencyMotherNo", v)} bgColor="white" />
           <InputField label="Emergency Guardian No" value={form.emergencyGuardianNo} onChange={(v) => onFieldChange("emergencyGuardianNo", v)} bgColor="white" />

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Download, Pencil, PlusCircle, Save, Search, Trash2 } from "lucide-react";
+import { Download, FileText, Pencil, PlusCircle, Save, Search, Trash2 } from "lucide-react";
 import PageHeader from "../../common/PageHeader";
 import PageTabs from "../../schooladmin/schooladmincomponents/PageHeaderTabs";
 import InputField from "../../schooladmin/schooladmincomponents/InputField";
@@ -37,6 +37,8 @@ type AdmissionRow = {
   boardingType: BoardingType;
   totalFee?: number | null;
   discountPercent?: number | null;
+  applicationFee?: number | null;
+  admissionFee?: number | null;
   firstName: string;
   middleName: string | null;
   lastName: string;
@@ -61,6 +63,8 @@ type FormState = {
   boardingType: BoardingType;
   totalFee: string;
   discountPercent: string;
+  applicationFee: string;
+  admissionFee: string;
   firstName: string;
   middleName: string;
   lastName: string;
@@ -127,6 +131,8 @@ const defaultForm = (): FormState => ({
   boardingType: "SEMI_RESIDENTIAL",
   totalFee: "",
   discountPercent: "0",
+  applicationFee: "",
+  admissionFee: "",
   firstName: "",
   middleName: "",
   lastName: "",
@@ -192,6 +198,68 @@ function SectionTitle({ title }: { title: string }) {
   return <div className="text-sm font-semibold text-white/90">{title}</div>;
 }
 
+function formatInrCell(n: number | null | undefined) {
+  if (n == null || Number.isNaN(Number(n))) return "—";
+  return `₹ ${Number(n).toLocaleString("en-IN")}`;
+}
+
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function downloadFeeReceipt(opts: {
+  schoolName: string;
+  applicationNo: string;
+  studentName: string;
+  createdAt: string;
+  applicationFee: number | null | undefined;
+  admissionFee: number | null | undefined;
+}) {
+  const app = opts.applicationFee;
+  const adm = opts.admissionFee;
+  const sum =
+    app != null || adm != null ? Number(app ?? 0) + Number(adm ?? 0) : null;
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><title>Fee receipt</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:520px;margin:40px auto;padding:24px;border:1px solid #ddd;border-radius:12px;}
+h1{font-size:1.25rem;margin:0 0 8px;}
+p{margin:6px 0;color:#444;font-size:14px;}
+table{width:100%;border-collapse:collapse;margin-top:16px;}
+td{padding:8px;border-bottom:1px solid #eee;}
+.note{font-size:12px;color:#666;margin-top:20px;}
+</style></head><body>
+<h1>Fee receipt (record)</h1>
+<p><strong>School:</strong> ${escapeHtml(opts.schoolName || "—")}</p>
+<p><strong>Application No:</strong> ${escapeHtml(opts.applicationNo)}</p>
+<p><strong>Student:</strong> ${escapeHtml(opts.studentName)}</p>
+<p><strong>Date:</strong> ${escapeHtml(opts.createdAt)}</p>
+<table>
+<tr><td>Application fee</td><td align="right">${formatInrCell(app)}</td></tr>
+<tr><td>Admission fee</td><td align="right">${formatInrCell(adm)}</td></tr>
+${
+  sum != null && Number.isFinite(sum)
+    ? `<tr><td><strong>Total</strong></td><td align="right"><strong>${formatInrCell(sum)}</strong></td></tr>`
+    : ""
+}
+</table>
+<p class="note">Amounts are recorded in the system only. No online payment is processed from this screen.</p>
+</body></html>`;
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `fee-receipt-${opts.applicationNo.replace(/[^\w-]+/g, "_")}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function TeacherAdmissionTab() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -222,6 +290,14 @@ export default function TeacherAdmissionTab() {
   const [classes, setClasses] = useState<{ id: string; name: string; section: string | null }[]>([]);
   const [selectedClassName, setSelectedClassName] = useState("");
   const [selectedSection, setSelectedSection] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+
+  useEffect(() => {
+    fetch("/api/school/mine", { credentials: "include", cache: "no-store" })
+      .then((res) => res.json())
+      .then((d) => setSchoolName(typeof d?.school?.name === "string" ? d.school.name : ""))
+      .catch(() => setSchoolName(""));
+  }, []);
 
   useEffect(() => {
     fetch("/api/class/list")
@@ -269,16 +345,44 @@ export default function TeacherAdmissionTab() {
 
   const tableColumns: any[] = useMemo(
     () => [
-      { header: "Application No", render: (r: AdmissionRow) => <span className="text-sm text-white/80">{r.applicationNo}</span> },
       { header: "Student", render: (r: AdmissionRow) => <span className="text-sm text-white/80">{`${r.firstName} ${r.lastName}`}</span> },
       { header: "Grade", render: (r: AdmissionRow) => <span className="text-sm text-white/70">{r.gradeSought}</span> },
       { header: "Boarding", render: (r: AdmissionRow) => <span className="text-sm text-white/70">{r.boardingType}</span> },
       { header: "Parent Phone", render: (r: AdmissionRow) => <span className="text-sm text-white/70">{r.parentPhone}</span> },
+      {
+        header: "Application Fee",
+        render: (r: AdmissionRow) => (
+          <span className="text-sm text-white/70">{formatInrCell(r.applicationFee)}</span>
+        ),
+      },
+      {
+        header: "Admission Fee",
+        render: (r: AdmissionRow) => (
+          <span className="text-sm text-white/70">{formatInrCell(r.admissionFee)}</span>
+        ),
+      },
       { header: "Created", render: (r: AdmissionRow) => <span className="text-sm text-white/60">{new Date(r.createdAt).toLocaleDateString()}</span> },
       {
         header: "Actions",
         render: (r: AdmissionRow) => (
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                downloadFeeReceipt({
+                  schoolName,
+                  applicationNo: r.applicationNo,
+                  studentName: `${r.firstName} ${r.lastName}`,
+                  createdAt: new Date(r.createdAt).toLocaleString(),
+                  applicationFee: r.applicationFee,
+                  admissionFee: r.admissionFee,
+                })
+              }
+              className="p-2 rounded-lg bg-lime-400/10 border border-lime-400/25 text-lime-300 hover:bg-lime-400/20"
+              title="Download fee receipt (HTML)"
+            >
+              <FileText size={14} />
+            </button>
             <button
               type="button"
               onClick={() => router.push(`?tab=admission&view=add&editId=${r.id}`)}
@@ -299,7 +403,7 @@ export default function TeacherAdmissionTab() {
         ),
       },
     ],
-    [router]
+    [router, schoolName]
   );
 
   useEffect(() => {
@@ -355,6 +459,9 @@ export default function TeacherAdmissionTab() {
           totalFee: a.totalFee === null || a.totalFee === undefined ? "" : String(a.totalFee),
           discountPercent:
             a.discountPercent === null || a.discountPercent === undefined ? "0" : String(a.discountPercent),
+          applicationFee:
+            a.applicationFee === null || a.applicationFee === undefined ? "" : String(a.applicationFee),
+          admissionFee: a.admissionFee === null || a.admissionFee === undefined ? "" : String(a.admissionFee),
           firstName: a.firstName ?? "",
           middleName: a.middleName ?? "",
           lastName: a.lastName ?? "",
@@ -427,18 +534,27 @@ export default function TeacherAdmissionTab() {
     setSubmitting(true);
     setMessage(null);
     try {
+      const aadharDigits = form.aadharNo.replace(/\D/g, "");
+      const derivedParentAadhar =
+        aadharDigits.length >= 8 ? `${aadharDigits.slice(0, 8)}0000` : `${aadharDigits.padEnd(8, "0")}0000`;
       const payload: any = {
         ...form,
         classId: form.classId || null,
         totalFee: form.totalFee || null,
         discountPercent: form.discountPercent || null,
+        applicationFee: form.applicationFee.trim() ? Number(form.applicationFee) : null,
+        admissionFee: form.admissionFee.trim() ? Number(form.admissionFee) : null,
         fedenaNo: form.fedenaNo || null,
-        admissionNo: form.admissionNo || null,
+        admissionNo: editId ? form.admissionNo?.trim() || null : null,
         middleName: form.middleName || null,
         caste: form.caste || null,
         religion: form.religion || null,
         town: form.town || null,
-        applicationNo: form.applicationNo || null,
+        applicationNo: editId ? form.applicationNo || undefined : null,
+        firstLanguage: form.firstLanguage?.trim() || "English",
+        parentAadharNo: form.parentAadharNo?.trim() || derivedParentAadhar,
+        previousSchoolName: form.previousSchoolName?.trim() || "-",
+        previousSchoolAddress: form.previousSchoolAddress?.trim() || "-",
       };
       const endpoint = editId ? `/api/admissions/${editId}` : "/api/admissions/create";
       const method = editId ? "PUT" : "POST";
@@ -546,20 +662,9 @@ export default function TeacherAdmissionTab() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <InputField
-                  label="Application No (optional)"
-                  value={form.applicationNo}
-                  onChange={(v) => setForm((p) => ({ ...p, applicationNo: v }))}
-                  placeholder="Leave empty to auto-generate"
-                />
-                <InputField
                   label="Fedena No (optional)"
                   value={form.fedenaNo}
                   onChange={(v) => setForm((p) => ({ ...p, fedenaNo: v }))}
-                />
-                <InputField
-                  label="Admission No (optional)"
-                  value={form.admissionNo}
-                  onChange={(v) => setForm((p) => ({ ...p, admissionNo: v }))}
                 />
               </div>
 
@@ -636,12 +741,6 @@ export default function TeacherAdmissionTab() {
                   required
                 />
                 <InputField
-                  label="First Language"
-                  value={form.firstLanguage}
-                  onChange={(v) => setForm((p) => ({ ...p, firstLanguage: v }))}
-                  required
-                />
-                <InputField
                   label="Total Fee (optional)"
                   value={form.totalFee}
                   onChange={(v) => setForm((p) => ({ ...p, totalFee: v }))}
@@ -655,6 +754,18 @@ export default function TeacherAdmissionTab() {
                   value={form.discountPercent}
                   onChange={(v) => setForm((p) => ({ ...p, discountPercent: v }))}
                   placeholder="0-100"
+                />
+                <InputField
+                  label="Application Fee (optional, record only)"
+                  value={form.applicationFee}
+                  onChange={(v) => setForm((p) => ({ ...p, applicationFee: v }))}
+                  placeholder="e.g. 500"
+                />
+                <InputField
+                  label="Admission Fee (optional, record only)"
+                  value={form.admissionFee}
+                  onChange={(v) => setForm((p) => ({ ...p, admissionFee: v }))}
+                  placeholder="e.g. 5000"
                 />
               </div>
 
@@ -710,19 +821,10 @@ export default function TeacherAdmissionTab() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <InputField label="Parent Phone" value={form.parentPhone} onChange={(v) => setForm((p) => ({ ...p, parentPhone: v }))} required />
                   <InputField label="Parent Email" value={form.parentEmail} onChange={(v) => setForm((p) => ({ ...p, parentEmail: v }))} required />
-                  <InputField label="Parent Aadhar No" value={form.parentAadharNo} onChange={(v) => setForm((p) => ({ ...p, parentAadharNo: v }))} required />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <InputField label="WhatsApp" value={form.parentWhatsapp} onChange={(v) => setForm((p) => ({ ...p, parentWhatsapp: v }))} required />
                   <InputField label="Bank Account No" value={form.bankAccountNo} onChange={(v) => setForm((p) => ({ ...p, bankAccountNo: v }))} required />
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-white/10 space-y-4">
-                <SectionTitle title="Academic History" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputField label="Previous School Name" value={form.previousSchoolName} onChange={(v) => setForm((p) => ({ ...p, previousSchoolName: v }))} required />
-                  <InputField label="Previous School Address" value={form.previousSchoolAddress} onChange={(v) => setForm((p) => ({ ...p, previousSchoolAddress: v }))} required />
                 </div>
               </div>
 
@@ -758,7 +860,7 @@ export default function TeacherAdmissionTab() {
                   <SearchInput
                     value={search}
                     onChange={setSearch}
-                    placeholder="Search by application no, name, phone, aadhar..."
+                    placeholder="Search by name, phone, aadhar..."
                     variant="glass"
                     icon={Search}
                   />
@@ -846,11 +948,29 @@ export default function TeacherAdmissionTab() {
               ) : (
                 rows.map((r) => (
                   <div key={r.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="text-white font-semibold">{r.applicationNo}</div>
-                    <div className="text-white/70 text-sm mt-1">{`${r.firstName} ${r.lastName}`}</div>
+                    <div className="text-white font-semibold">{`${r.firstName} ${r.lastName}`}</div>
                     <div className="text-white/50 text-xs mt-1">{`${r.gradeSought} • ${r.boardingType}`}</div>
                     <div className="text-white/50 text-xs mt-1">{`Phone: ${r.parentPhone}`}</div>
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="text-white/50 text-xs mt-1">
+                      App fee: {formatInrCell(r.applicationFee)} · Adm fee: {formatInrCell(r.admissionFee)}
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadFeeReceipt({
+                            schoolName,
+                            applicationNo: r.applicationNo,
+                            studentName: `${r.firstName} ${r.lastName}`,
+                            createdAt: new Date(r.createdAt).toLocaleString(),
+                            applicationFee: r.applicationFee,
+                            admissionFee: r.admissionFee,
+                          })
+                        }
+                        className="px-3 py-2 rounded-xl bg-lime-400/15 border border-lime-400/30 text-lime-300 text-xs"
+                      >
+                        Receipt
+                      </button>
                       <button
                         type="button"
                         onClick={() => router.push(`?tab=admission&view=add&editId=${r.id}`)}

@@ -20,8 +20,6 @@ export const toStudentForm = (student: StudentRow): StudentFormState => ({
   rollNo: student.rollNo || "",
   gender: student.gender || "",
   dob: student.dob || "",
-  previousSchool: student.previousSchool || "",
-  previousSchoolAddress: "",
   classId: student.class?.id || "",
   section: student.class?.section || "",
   status: student.status || "Active",
@@ -33,18 +31,24 @@ export const toStudentForm = (student: StudentRow): StudentFormState => ({
   email: student.user?.email || (student as { email?: string }).email || "",
   address: student.address || "",
   aadhaarNo: student.aadhaarNo || "",
-  parentAadharNo: "",
   parentWhatsapp: "",
   bankAccountNo: "",
   totalFee: "",
   discountPercent: "",
+  applicationFee:
+    student.applicationFee != null && student.applicationFee !== undefined
+      ? String(student.applicationFee)
+      : "",
+  admissionFee:
+    student.admissionFee != null && student.admissionFee !== undefined
+      ? String(student.admissionFee)
+      : "",
   houseNo: "",
   street: "",
   city: "",
   town: "",
   state: "",
   pinCode: "",
-  firstLanguage: "",
   nationality: "Indian",
   languagesAtHome: "",
   caste: "",

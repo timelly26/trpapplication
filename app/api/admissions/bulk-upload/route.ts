@@ -89,6 +89,14 @@ export async function POST(req: Request) {
         const section = toStr(row.section);
         const totalFee = row.totalFee === "" || row.totalFee == null ? null : Number(row.totalFee);
         const discountPercent = row.discountPercent === "" || row.discountPercent == null ? null : Number(row.discountPercent);
+        const applicationFee =
+          row.applicationFee === "" || row.applicationFee == null || row["Application Fee"] === ""
+            ? null
+            : Number(row.applicationFee ?? row["Application Fee"]);
+        const admissionFee =
+          row.admissionFee === "" || row.admissionFee == null || row["Admission Fee"] === ""
+            ? null
+            : Number(row.admissionFee ?? row["Admission Fee"]);
         const email = toStr(row.email);
         const address = toStr(row.address);
 
@@ -130,6 +138,9 @@ export async function POST(req: Request) {
             boardingType: "SEMI_RESIDENTIAL",
             totalFee,
             discountPercent,
+            applicationFee:
+              applicationFee != null && Number.isFinite(applicationFee) ? applicationFee : null,
+            admissionFee: admissionFee != null && Number.isFinite(admissionFee) ? admissionFee : null,
             rollNo: rollNo || null,
             firstName,
             middleName,
@@ -165,6 +176,9 @@ export async function POST(req: Request) {
             section: section || null,
             totalFee,
             discountPercent,
+            applicationFee:
+              applicationFee != null && Number.isFinite(applicationFee) ? applicationFee : null,
+            admissionFee: admissionFee != null && Number.isFinite(admissionFee) ? admissionFee : null,
             rollNo: rollNo || null,
             parentName: fatherName,
             parentPhone: phoneNo,

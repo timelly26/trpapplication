@@ -445,6 +445,9 @@ model Student {
   gender          String?
   previousSchool  String?  @db.Text
 
+  applicationFee Float? // record-only fee amounts (no payment integration here)
+  admissionFee   Float?
+
   // Relations
   attendances          Attendance[]
   marks                Mark[]
@@ -1141,6 +1144,8 @@ model StudentApplication {
   // Fees (for bulk upload compatibility)
   totalFee         Float?
   discountPercent  Float?
+  applicationFee   Float? // record-only; no payment gateway
+  admissionFee     Float?
 
   // Optional identifiers (for bulk upload compatibility)
   rollNo String?

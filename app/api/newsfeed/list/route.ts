@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/db";
+import { purgeExpiredNewsFeeds } from "@/lib/newsfeedRetention";
 
 async function getSchoolId(session: { user: { id: string; schoolId?: string | null } }) {
   let schoolId = session.user.schoolId;
@@ -20,6 +21,7 @@ type FeedRow = {
   title: string;
   description: string;
   photo: string | null;
+  photos: string[] | null;
   likes: number;
   schoolId: string;
   createdById: string;
@@ -36,31 +38,41 @@ function mapFeedsToResponse(
   feeds: FeedRow[],
   likedSet: Set<string>
 ) {
-  return feeds.map((f) => ({
-    id: f.id,
-    title: f.title,
-    description: f.description,
-    photo: f.photo ?? null,
-    mediaUrl: f.photo ?? null,
-    mediaType: f.photo ? "PHOTO" : null,
-    likes: f.likes ?? 0,
-    schoolId: f.schoolId,
-    createdById: f.createdById,
-    createdBy: {
-      id: f.creatorId ?? f.createdById,
-      name: f.creatorName ?? null,
-      email: f.creatorEmail ?? null,
-    },
-    createdAt: f.createdAt instanceof Date ? f.createdAt.toISOString() : String(f.createdAt),
-    updatedAt: f.updatedAt instanceof Date ? f.updatedAt.toISOString() : String(f.updatedAt),
-    likedByMe: likedSet.has(f.id),
-  }));
+  return feeds.map((f) => {
+    const photos =
+      Array.isArray(f.photos) && f.photos.length > 0
+        ? f.photos
+        : f.photo
+          ? [f.photo]
+          : [];
+    const mainPhoto = f.photo ?? photos[0] ?? null;
+    return {
+      id: f.id,
+      title: f.title,
+      description: f.description,
+      photo: mainPhoto,
+      photos,
+      mediaUrl: mainPhoto,
+      mediaType: mainPhoto ? "PHOTO" : null,
+      likes: f.likes ?? 0,
+      schoolId: f.schoolId,
+      createdById: f.createdById,
+      createdBy: {
+        id: f.creatorId ?? f.createdById,
+        name: f.creatorName ?? null,
+        email: f.creatorEmail ?? null,
+      },
+      createdAt: f.createdAt instanceof Date ? f.createdAt.toISOString() : String(f.createdAt),
+      updatedAt: f.updatedAt instanceof Date ? f.updatedAt.toISOString() : String(f.updatedAt),
+      likedByMe: likedSet.has(f.id),
+    };
+  });
 }
 
 /** List news feeds using raw SQL (works even if Prisma delegate is missing) */
 async function listViaRawSql(schoolId: string, userId: string) {
   const feeds = await prisma.$queryRawUnsafe<FeedRow[]>(
-    `SELECT nf.id, nf.title, nf.description, nf.photo, nf.likes, nf."schoolId", nf."createdById",
+    `SELECT nf.id, nf.title, nf.description, nf.photo, nf.photos, nf.likes, nf."schoolId", nf."createdById",
             nf."createdAt", nf."updatedAt",
             u.id as "creatorId", u.name as "creatorName", u.email as "creatorEmail"
      FROM "NewsFeed" nf
@@ -92,6 +104,8 @@ export async function GET() {
     if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+
+    await purgeExpiredNewsFeeds();
 
     const schoolId = await getSchoolId(session);
 

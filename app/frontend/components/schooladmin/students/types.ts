@@ -16,8 +16,6 @@ export type StudentFormState = {
   rollNo: string;
   gender: string;
   dob: string;
-  previousSchool: string;
-  previousSchoolAddress: string;
   classId: string;
   section: string;
   status: string;
@@ -28,11 +26,12 @@ export type StudentFormState = {
   phoneNo: string;
   email: string;
   aadhaarNo: string;
-  parentAadharNo: string;
   parentWhatsapp: string;
   bankAccountNo: string;
   totalFee: string;
   discountPercent: string;
+  applicationFee: string;
+  admissionFee: string;
   address: string;
   houseNo: string;
   street: string;
@@ -40,7 +39,6 @@ export type StudentFormState = {
   town: string;
   state: string;
   pinCode: string;
-  firstLanguage: string;
   nationality: string;
   languagesAtHome: string;
   caste: string;

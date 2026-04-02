@@ -12,7 +12,9 @@ export default function NewsFeed() {
       <main className="max-w-3xl mx-auto space-y-4 md:space-y-6">
         <section className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-1 md:mb-2 text-white">News Feed</h2>
-          <p className="text-sm md:text-base text-gray-300">Create and manage school announcements</p>
+          <p className="text-sm md:text-base text-gray-300">
+            Create and manage school announcements. You can download images from each post. Posts older than 7 days are removed automatically to keep storage manageable.
+          </p>
         </section>
 
         <CreatePost onPublished={refetch} />

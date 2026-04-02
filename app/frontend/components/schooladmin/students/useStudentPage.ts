@@ -55,8 +55,6 @@ const DEFAULT_FORM: StudentFormState = {
   rollNo: "",
   gender: "",
   dob: "",
-  previousSchool: "",
-  previousSchoolAddress: "",
   classId: "",
   section: "",
   status: "Active",
@@ -68,18 +66,18 @@ const DEFAULT_FORM: StudentFormState = {
   email: "",
   address: "",
   aadhaarNo: "",
-  parentAadharNo: "",
   parentWhatsapp: "",
   bankAccountNo: "",
   totalFee: "",
   discountPercent: "",
+  applicationFee: "",
+  admissionFee: "",
   houseNo: "",
   street: "",
   city: "",
   town: "",
   state: "",
   pinCode: "",
-  firstLanguage: "",
   nationality: "Indian",
   languagesAtHome: "",
   caste: "",
@@ -376,9 +374,12 @@ export default function useStudentPage({ classes = [], reload }: Props) {
         discountPercent: form.discountPercent
           ? Number(form.discountPercent)
           : 0,
+        applicationFee: form.applicationFee.trim()
+          ? Number(form.applicationFee)
+          : null,
+        admissionFee: form.admissionFee.trim() ? Number(form.admissionFee) : null,
         rollNo: form.rollNo?.trim() || undefined,
         gender: form.gender?.trim() || undefined,
-        previousSchool: form.previousSchool?.trim() || undefined,
       });
 
       const data = await res.json();
@@ -499,7 +500,10 @@ export default function useStudentPage({ classes = [], reload }: Props) {
         phoneNo: editForm.phoneNo.trim() || undefined,
         address: editForm.address.trim() || undefined,
         gender: editForm.gender.trim() || undefined,
-        previousSchool: editForm.previousSchool.trim() || undefined,
+        applicationFee: editForm.applicationFee.trim()
+          ? Number(editForm.applicationFee)
+          : null,
+        admissionFee: editForm.admissionFee.trim() ? Number(editForm.admissionFee) : null,
       });
       const data = await res.json();
       if (!res.ok) {

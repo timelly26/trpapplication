@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Heart, MessageCircle, MoreHorizontal } from "lucide-react";
+import { Calendar, Download, Heart, MessageCircle, MoreHorizontal } from "lucide-react";
+import { downloadImageFromUrl } from "../../../utils/downloadImage";
 import { formatRelativeTime } from "../../../utils/format";
 import { ParentEvent, ParentFeed } from "./types";
 
@@ -33,6 +34,7 @@ export default function ParentHomeUpdatesSection({ feeds, events }: Props) {
   const [likedByMe, setLikedByMe] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
+  const [downloadingFeedId, setDownloadingFeedId] = useState<string | null>(null);
 
   useEffect(() => {
     setLikedByMe(Boolean(latestFeed?.likedByMe));
@@ -121,7 +123,25 @@ export default function ParentHomeUpdatesSection({ feeds, events }: Props) {
                     EVENT
                   </span>
                   {feed.photo && (
-                    <div className="rounded-xl overflow-hidden border border-white/[0.05]">
+                    <div className="relative rounded-xl overflow-hidden border border-white/[0.05]">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!feed.photo) return;
+                          setDownloadingFeedId(feed.id);
+                          try {
+                            await downloadImageFromUrl(feed.photo, `school-update-${feed.id}`);
+                          } finally {
+                            setDownloadingFeedId(null);
+                          }
+                        }}
+                        disabled={downloadingFeedId === feed.id}
+                        className="absolute right-2 top-2 z-10 w-9 h-9 rounded-full bg-black/55 hover:bg-black/75 text-white flex items-center justify-center transition opacity-90 hover:opacity-100 disabled:opacity-50"
+                        aria-label="Download image"
+                        title="Download image"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={feed.photo}

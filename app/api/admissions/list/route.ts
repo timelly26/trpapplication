@@ -79,6 +79,8 @@ export async function GET(req: Request) {
           boardingType: true,
           totalFee: true,
           discountPercent: true,
+          applicationFee: true,
+          admissionFee: true,
           firstName: true,
           middleName: true,
           lastName: true,
