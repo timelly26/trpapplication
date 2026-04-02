@@ -31,6 +31,7 @@ export const toStudentForm = (student: StudentRow): StudentFormState => ({
   email: student.user?.email || (student as { email?: string }).email || "",
   address: student.address || "",
   aadhaarNo: student.aadhaarNo || "",
+  parentAadharNo: (student as { parentAadharNo?: string }).parentAadharNo || "",
   parentWhatsapp: "",
   bankAccountNo: "",
   totalFee: "",
@@ -43,6 +44,7 @@ export const toStudentForm = (student: StudentRow): StudentFormState => ({
     student.admissionFee != null && student.admissionFee !== undefined
       ? String(student.admissionFee)
       : "",
+  previousSchool: student.previousSchool || "",
   houseNo: "",
   street: "",
   city: "",

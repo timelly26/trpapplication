@@ -26,6 +26,7 @@ export type StudentFormState = {
   phoneNo: string;
   email: string;
   aadhaarNo: string;
+  parentAadharNo: string;
   parentWhatsapp: string;
   bankAccountNo: string;
   totalFee: string;
@@ -33,6 +34,7 @@ export type StudentFormState = {
   applicationFee: string;
   admissionFee: string;
   address: string;
+  previousSchool: string;
   houseNo: string;
   street: string;
   city: string;
