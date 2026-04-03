@@ -188,18 +188,20 @@ function StudentDetailsPageContent() {
   const sectionOptions = [{ label: "All Sections", value: "" }, ...sections.map((s) => ({ label: s, value: s }))];
 
   return (
-    <div className="space-y-6 md:space-y-8 max-w-[1600px] mx-auto min-h-0 overflow-y-auto overflow-x-hidden pb-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 max-w-[1600px] mx-auto min-h-0 w-full min-w-0 overflow-y-auto overflow-x-hidden pb-6 sm:pb-8">
       <PageHeader
         title="Student Details"
         subtitle="View comprehensive academic and personal records."
         rightSlot={
-          <div className="bg-[#0F172A]/40 border border-white/10 px-4 py-2 rounded-xl text-sm text-gray-200">
-            {new Date().getFullYear() - 1}-{new Date().getFullYear()}
+          <div className="w-full sm:w-auto flex justify-center sm:justify-end">
+            <div className="bg-[#0F172A]/40 border border-white/10 px-3 py-2 sm:px-4 rounded-xl text-xs sm:text-sm text-gray-200 whitespace-nowrap">
+              {new Date().getFullYear() - 1}-{new Date().getFullYear()}
+            </div>
           </div>
         }
       />
-      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 rounded-2xl p-4 sm:p-6 overflow-visible relative z-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 overflow-visible">
+      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-6 overflow-visible relative z-20 min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 overflow-visible">
           <div>
             <StudentSearchAutocomplete
               students={students}
@@ -237,8 +239,8 @@ function StudentDetailsPageContent() {
       )}
 
       {!loading && detail && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8 min-w-0">
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 min-w-0">
+          <div className="lg:col-span-1 min-w-0">
             <ProfileSidebar
               student={{
                 name: detail.student.name,
@@ -259,8 +261,8 @@ function StudentDetailsPageContent() {
             />
           </div>
 
-          <div className="lg:col-span-3 space-y-6 md:space-y-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="lg:col-span-3 space-y-4 sm:space-y-6 md:space-y-8 min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 min-w-0">
                 <div className="p-2 bg-lime-400/10 rounded-xl flex-shrink-0">
                   <Calendar className="w-5 h-5 sm:w-5 sm:h-5 text-lime-400" />

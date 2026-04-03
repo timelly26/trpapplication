@@ -86,24 +86,27 @@ export const FeesBreakdown = ({
   const displayClass = classDisplayName || "—";
 
   return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Zap className="w-5 h-5 text-amber-400 flex-shrink-0" /> Fees Breakdown
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-[2rem] p-3 sm:p-6 min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-6 min-w-0">
+        <h3 className="text-base sm:text-lg font-semibold text-white flex items-center gap-2 min-w-0">
+          <Zap className="w-5 h-5 text-amber-400 flex-shrink-0" />
+          <span className="leading-tight">Fees Breakdown</span>
         </h3>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto sm:flex-wrap sm:justify-end">
           <button
+            type="button"
             onClick={() => setShowAddExtraFee(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-semibold transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] touch-manipulation bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-semibold transition-colors"
           >
-            <PlusCircle className="w-4 h-4" />
+            <PlusCircle className="w-4 h-4 flex-shrink-0" />
             Add Extra Fee
           </button>
           <button
+            type="button"
             onClick={() => setShowModifyFee(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-semibold transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] touch-manipulation bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-semibold transition-colors"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4 flex-shrink-0" />
             Edit Fee Setup
           </button>
           {/* {payments.length > 0 && (
@@ -155,8 +158,8 @@ export const FeesBreakdown = ({
 
       {/* Fee Type Breakdown Table */}
       {feeBreakdown.size > 0 ? (
-        <div className="overflow-x-auto -mx-1">
-          <table className="w-full text-left min-w-[320px]">
+        <div className="overflow-x-auto -mx-1 sm:mx-0 overscroll-x-contain touch-pan-x pb-1">
+          <table className="w-full text-left min-w-[480px] sm:min-w-0">
             <thead>
               <tr className="text-[11px] text-gray-400 font-bold tracking-wider uppercase border-b border-white/5">
                 <th className="pb-4 font-medium">Fee Type</th>

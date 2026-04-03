@@ -35,7 +35,7 @@ export const FeeTransactions = ({ fee, payments, studentName = "Student", studen
     try {
       setDownloadingId(`${payment.id}-${copyType}`);
       const response = await fetch(
-        `/api/student/receipt?paymentId=${payment.id}&studentId=${studentId}&studentName=${encodeURIComponent(studentName)}&admissionNumber=${admissionNumber}&admissionNumber=${admissionNumber}&copyType=${copyType}`,
+        `/api/student/receipt?paymentId=${payment.id}&studentId=${studentId}&studentName=${encodeURIComponent(studentName)}&admissionNumber=${encodeURIComponent(admissionNumber)}&copyType=${copyType}`,
         { credentials: "include" }
       );
 
@@ -62,7 +62,7 @@ export const FeeTransactions = ({ fee, payments, studentName = "Student", studen
   return (
     <div
       id="student-profile-fees-section"
-      className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 sm:p-6 mt-6 overflow-hidden min-w-0 -mx-1 sm:mx-0 scroll-mt-24"
+      className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-[2rem] p-3 sm:p-6 mt-4 sm:mt-6 overflow-hidden min-w-0 scroll-mt-28 sm:scroll-mt-24"
     >
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6 sm:mb-8">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -81,8 +81,8 @@ export const FeeTransactions = ({ fee, payments, studentName = "Student", studen
       {!hasAny ? (
         <div className="py-8 text-center text-gray-500 text-sm">No fee records</div>
       ) : (
-        <div className="overflow-x-auto -mx-1">
-          <table className="w-full text-left min-w-[320px]">
+        <div className="overflow-x-auto overscroll-x-contain touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0 pb-1 rounded-lg">
+          <table className="w-full text-left min-w-[720px]">
             <thead>
               <tr className="text-[11px] text-gray-400 font-bold tracking-wider uppercase border-b border-white/5">
                 <th className="pb-4 font-medium">DATE</th>
