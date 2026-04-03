@@ -90,6 +90,18 @@ export async function GET(req: Request) {
       })),
     ];
 
+    const sumHeadsDue = allHeads.reduce((s, h) => s + h.snapshotDue, 0);
+    const manualDue = Math.max(fee.finalFee - sumHeadsDue, 0);
+
+    if (manualDue > 0.00001) {
+      allHeads.push({
+        key: `BASE:-1`,
+        headType: "BASE_COMPONENT" as const,
+        label: "General Tuition Fee",
+        snapshotDue: manualDue,
+      });
+    }
+
     // Net already-paid by head via allocations (new payments only).
     const [paymentAllocations, refundAllocations] = await Promise.all([
       prisma.paymentFeeAllocation.findMany({

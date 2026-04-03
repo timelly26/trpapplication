@@ -19,6 +19,7 @@ type StudentDetail = {
   student: {
     id: string;
     name: string;
+    schoolName: string;
     admissionNumber: string;
     email: string;
     photoUrl?: string | null;
@@ -34,6 +35,8 @@ type StudentDetail = {
     class: { id: string; name: string; section: string | null; displayName: string } | null;
   };
   fee: {
+    baseTotalFee: number;
+    discountPercent: number;
     totalFee: number;
     amountPaid: number;
     remainingFee: number;
@@ -144,7 +147,7 @@ function StudentDetailsPageContent() {
     }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/student/${selectedId}`, { credentials: "include" })
+    fetch(`/api/student/${selectedId}`, { credentials: "include", cache: "no-store" })
       .then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d?.message || "Failed to load student");
@@ -326,10 +329,18 @@ function StudentDetailsPageContent() {
             {detail.fee && (
               <>
                 <FeesBreakdown
+                  studentId={detail.student.id}
                   totalFee={detail.fee.totalFee}
+                  baseTotalFee={detail.fee.baseTotalFee}
+                  discountPercent={detail.fee.discountPercent}
                   amountPaid={detail.fee.amountPaid}
                   remainingFee={detail.fee.remainingFee}
                   payments={detail.payments}
+                  studentName={detail.student.name}
+                  admissionNumber={detail.student.admissionNumber}
+                  classDisplayName={detail.student.class?.displayName ?? "-"}
+                  schoolName={detail.student.schoolName}
+                  onFeeModified={() => setReloadKey(prev => prev + 1)}
                 />
                 <OfflinePayments
                   studentId={detail.student.id}
@@ -340,7 +351,9 @@ function StudentDetailsPageContent() {
               </>
             )}
 
-            <Certificates certificates={detail.certificates} />
+            <div className="mt-8">
+              <Certificates certificates={detail.certificates} />
+            </div>
           </div>
         </div>
       )}
