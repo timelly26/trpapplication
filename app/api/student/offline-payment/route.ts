@@ -76,14 +76,6 @@ export async function POST(req: Request) {
                 status: "COMPLETED",
                 gateway: method,
                 transactionId,
-                metadata: {
-                    method,
-                    referenceNumber: referenceNumber || null,
-                    bankName: bankName || null,
-                    description: description || null,
-                    recordedBy: session.user.id,
-                    recordedAt: new Date().toISOString(),
-                },
             },
         });
 

@@ -4,11 +4,28 @@ import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/db";
 import { generateReceiptPDFServer } from "@/lib/receiptGeneratorServer";
 
+async function resolveSchoolId(session: { user: { id: string; schoolId?: string | null; role?: string } }) {
+    let schoolId = session.user.schoolId;
+    if (!schoolId && (session.user.role === "SCHOOLADMIN" || session.user.role === "SUPERADMIN")) {
+        const adminSchool = await prisma.school.findFirst({
+            where: { admins: { some: { id: session.user.id } } },
+            select: { id: true },
+        });
+        schoolId = adminSchool?.id ?? null;
+    }
+    return schoolId;
+}
+
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.id || !session?.user?.schoolId) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const schoolId = await resolveSchoolId(session);
+        if (!schoolId) {
+            return NextResponse.json({ error: "School not found" }, { status: 400 });
         }
 
         const searchParams = request.nextUrl.searchParams;
@@ -27,10 +44,11 @@ export async function GET(request: NextRequest) {
 
         // Verify student belongs to school
         const student = await prisma.student.findFirst({
-            where: { id: studentId, schoolId: session.user.schoolId },
+            where: { id: studentId, schoolId },
             include: {
                 user: true,
                 class: true,
+                school: { select: { name: true } },
             },
         });
 
@@ -50,11 +68,18 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Payment not found" }, { status: 404 });
         }
 
+        const school = await prisma.school.findUnique({
+            where: { id: schoolId },
+            select: { name: true },
+        });
+
+        const schoolName = school?.name ?? student.school?.name ?? "Timelly School";
+
         const pdfBytes = await generateReceiptPDFServer({
             payment,
             student,
             copyType,
-            schoolName: "Timely School",
+            schoolName,
         });
 
         return new NextResponse(pdfBytes, {
