@@ -4,10 +4,13 @@ import { Suspense, useEffect, useLayoutEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AcademicPerformance } from "./components/AcademicPerformance";
 import { FeeTransactions } from "./components/FeeTransactions";
+import { FeesBreakdown } from "./components/FeesBreakdown";
+import { OfflinePayments } from "./components/OfflinePayments";
 import { ProfileSidebar } from "./components/ProfileSidebar";
 import { AttendanceTrends } from "./components/AttendanceTrends";
 import { Certificates } from "./components/Certificates";
-import { Calendar, BookOpen, Activity, Clock } from "lucide-react";
+import { StudentSearchAutocomplete } from "./components/StudentSearchAutocomplete";
+import { Calendar, BookOpen, Activity, Clock, Search } from "lucide-react";
 import PageHeader from "../../common/PageHeader";
 import Spinner from "../../common/Spinner";
 import SelectInput from "../../common/SelectInput";
@@ -76,6 +79,7 @@ function StudentDetailsPageContent() {
   const [selectedId, setSelectedId] = useState<string | null>(studentIdFromUrl);
   const [detail, setDetail] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterClass, setFilterClass] = useState("");
   const [filterSection, setFilterSection] = useState("");
@@ -163,7 +167,7 @@ function StudentDetailsPageContent() {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [selectedId]);
+  }, [selectedId, reloadKey]);
 
   const filtered = students.filter((s) => {
     if (searchQuery) {
@@ -191,54 +195,42 @@ function StudentDetailsPageContent() {
           </div>
         }
       />
-      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 rounded-2xl p-4 sm:p-6 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <div>
-          <label className="text-xs text-gray-500 mb-2 block">Search Student</label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
-            <input
-              type="text"
-              placeholder="Search by name or ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#0F172A]/40 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 sm:py-2 text-sm outline-none text-gray-200 min-h-[44px] touch-manipulation"
+      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 rounded-2xl p-4 sm:p-6 overflow-visible relative z-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 overflow-visible">
+          <div>
+            <StudentSearchAutocomplete
+              students={students}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onSelectStudent={setSelectedId}
+              selectedId={selectedId}
+              classFilter={filterClass}
+              sectionFilter={filterSection}
             />
           </div>
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-2 block">Filter by Class</label>
-          <SelectInput
-            value={filterClass}
-            onChange={setFilterClass}
-            options={classOptions}
-            bgColor="black"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-2 block">Filter by Section</label>
-          <SelectInput
-            value={filterSection}
-            onChange={setFilterSection}
-            options={sectionOptions}
-            bgColor="black"
-          />
-        </div>
-        <div className="md:col-span-3">
-          <label className="text-xs text-gray-500 mb-2 block">Select Student Profile</label>
-          <SelectInput
-            value={selectedId ?? ""}
-            onChange={(value) => setSelectedId(value || null)}
-            options={filtered.map((s) => ({
-              label: `${s.name} (${s.admissionNumber}) - Class ${s.classDisplay}`,
-              value: s.id,
-            }))}
-            bgColor="black"
-          />
+          <div>
+            <label className="text-xs text-gray-500 mb-2 block">Filter by Class</label>
+            <SelectInput
+              value={filterClass}
+              onChange={setFilterClass}
+              options={classOptions}
+              bgColor="black"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-2 block">Filter by Section</label>
+            <SelectInput
+              value={filterSection}
+              onChange={setFilterSection}
+              options={sectionOptions}
+              bgColor="black"
+            />
+          </div>
         </div>
       </div>
 
       {loading && (
-        <div className="text-center py-12 text-gray-400"><Spinner/></div>
+        <div className="text-center py-12 text-gray-400"><Spinner /></div>
       )}
 
       {!loading && detail && (
@@ -321,12 +313,33 @@ function StudentDetailsPageContent() {
             </div>
 
             <AcademicPerformance data={detail.academicPerformance} />
-           
-             <AttendanceTrends data={detail.attendanceTrends} />
-              <FeeTransactions
-                fee={detail.fee}
-                payments={detail.payments}
-              />
+
+            <AttendanceTrends data={detail.attendanceTrends} />
+            <FeeTransactions
+              fee={detail.fee}
+              payments={detail.payments}
+              studentName={detail.student.name}
+              studentId={detail.student.id}
+              admissionNumber={detail.student.admissionNumber}
+            />
+
+            {detail.fee && (
+              <>
+                <FeesBreakdown
+                  totalFee={detail.fee.totalFee}
+                  amountPaid={detail.fee.amountPaid}
+                  remainingFee={detail.fee.remainingFee}
+                  payments={detail.payments}
+                />
+                <OfflinePayments
+                  studentId={detail.student.id}
+                  studentName={detail.student.name}
+                  remainingFee={detail.fee.remainingFee}
+                  onPaymentAdded={() => setReloadKey(prev => prev + 1)}
+                />
+              </>
+            )}
+
             <Certificates certificates={detail.certificates} />
           </div>
         </div>

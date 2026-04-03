@@ -1,4 +1,5 @@
-import { Receipt } from "lucide-react";
+import { Receipt, Download } from "lucide-react";
+import { useState } from "react";
 
 type Props = {
   fee?: {
@@ -16,14 +17,47 @@ type Props = {
     feeTypeName?: string;
     feeTypeAmount?: number;
   }>;
+  studentName?: string;
+  studentId?: string;
+  admissionNumber?: string;
 };
 
-export const FeeTransactions = ({ fee, payments }: Props) => {
+export const FeeTransactions = ({ fee, payments, studentName = "Student", studentId = "", admissionNumber = "" }: Props) => {
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   const hasFee = fee && (fee.totalFee > 0 || fee.amountPaid > 0 || fee.remainingFee > 0);
   const activePayments = payments && payments.length > 0 ? payments : [];
   const totalPaid = hasFee ? fee!.amountPaid : 0;
   const total = hasFee ? fee!.amountPaid + fee!.remainingFee : 0;
   const hasAny = hasFee || activePayments.length > 0;
+
+  const handleDownloadReceipt = async (payment: typeof activePayments[0], copyType: "admin" | "parent") => {
+    try {
+      setDownloadingId(`${payment.id}-${copyType}`);
+      const response = await fetch(
+        `/api/student/receipt?paymentId=${payment.id}&studentId=${studentId}&studentName=${encodeURIComponent(studentName)}&admissionNumber=${admissionNumber}&admissionNumber=${admissionNumber}&copyType=${copyType}`,
+        { credentials: "include" }
+      );
+
+      if (!response.ok) throw new Error("Failed to download receipt");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const copyLabel = copyType === "admin" ? "Admin" : "Parent";
+      a.download = `Receipt_${admissionNumber}_${copyLabel}_${new Date(payment.createdAt).toISOString().split("T")[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error downloading receipt:", error);
+      alert("Failed to download receipt. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   return (
     <div
@@ -47,40 +81,63 @@ export const FeeTransactions = ({ fee, payments }: Props) => {
       {!hasAny ? (
         <div className="py-8 text-center text-gray-500 text-sm">No fee records</div>
       ) : (
-      <div className="overflow-x-auto -mx-1">
-        <table className="w-full text-left min-w-[320px]">
-          <thead>
-            <tr className="text-[11px] text-gray-400 font-bold tracking-wider uppercase border-b border-white/5">
-              <th className="pb-4 font-medium">DATE</th>
-              <th className="pb-4 font-medium">DESCRIPTION</th>
-              <th className="pb-4 font-medium">FEE TYPE</th>
-              <th className="pb-4 font-medium">METHOD</th>
-              <th className="pb-4 font-medium">STATUS</th>
-              <th className="pb-4 font-medium text-right">AMOUNT</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm">
-            {activePayments.map((p) => (
-              <tr key={p.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                <td className="py-4 sm:py-5 text-gray-400 whitespace-nowrap">
-                  {new Date(p.createdAt).toISOString().slice(0, 10)}
-                </td>
-                <td className="py-4 sm:py-5 font-bold text-gray-100">Fee payment</td>
-                <td className="py-4 sm:py-5 text-gray-400">{p.feeTypeName || "-"}</td>
-                <td className="py-4 sm:py-5 text-gray-400">{p.method || "-"}</td>
-                <td className="py-4 sm:py-5">
-                  <span className="bg-lime-400/20 text-lime-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase">
-                    {p.status || "Paid"}
-                  </span>
-                </td>
-                <td className="py-4 sm:py-5 text-right font-bold text-white whitespace-nowrap">
-                  ₹{(typeof p.feeTypeAmount === "number" ? p.feeTypeAmount : p.amount).toLocaleString("en-IN")}
-                </td>
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-left min-w-[320px]">
+            <thead>
+              <tr className="text-[11px] text-gray-400 font-bold tracking-wider uppercase border-b border-white/5">
+                <th className="pb-4 font-medium">DATE</th>
+                <th className="pb-4 font-medium">DESCRIPTION</th>
+                <th className="pb-4 font-medium">FEE TYPE</th>
+                <th className="pb-4 font-medium">METHOD</th>
+                <th className="pb-4 font-medium">STATUS</th>
+                <th className="pb-4 font-medium text-right">AMOUNT</th>
+                <th className="pb-4 font-medium text-center">RECEIPT</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="text-sm">
+              {activePayments.map((p) => (
+                <tr key={p.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <td className="py-4 sm:py-5 text-gray-400 whitespace-nowrap">
+                    {new Date(p.createdAt).toISOString().slice(0, 10)}
+                  </td>
+                  <td className="py-4 sm:py-5 font-bold text-gray-100">Fee payment</td>
+                  <td className="py-4 sm:py-5 text-gray-400">{p.feeTypeName || "-"}</td>
+                  <td className="py-4 sm:py-5 text-gray-400">{p.method || "-"}</td>
+                  <td className="py-4 sm:py-5">
+                    <span className="bg-lime-400/20 text-lime-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+                      {p.status || "Paid"}
+                    </span>
+                  </td>
+                  <td className="py-4 sm:py-5 text-right font-bold text-white whitespace-nowrap">
+                    ₹{(typeof p.feeTypeAmount === "number" ? p.feeTypeAmount : p.amount).toLocaleString("en-IN")}
+                  </td>
+                  <td className="py-4 sm:py-5 text-center">
+                    <div className="flex gap-2 justify-center items-center flex-wrap">
+                      <button
+                        onClick={() => handleDownloadReceipt(p, "admin")}
+                        disabled={downloadingId === `${p.id}-admin`}
+                        className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 hover:bg-blue-500/30 disabled:bg-gray-600 disabled:cursor-not-allowed text-blue-400 disabled:text-gray-500 rounded text-xs font-semibold transition-colors"
+                        title="Download Admin Copy"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span className="hidden sm:inline">Admin</span>
+                      </button>
+                      <button
+                        onClick={() => handleDownloadReceipt(p, "parent")}
+                        disabled={downloadingId === `${p.id}-parent`}
+                        className="flex items-center gap-1 px-2 py-1 bg-green-500/20 hover:bg-green-500/30 disabled:bg-gray-600 disabled:cursor-not-allowed text-green-400 disabled:text-gray-500 rounded text-xs font-semibold transition-colors"
+                        title="Download Parent Copy"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span className="hidden sm:inline">Parent</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

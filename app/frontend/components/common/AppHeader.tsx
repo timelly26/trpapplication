@@ -315,7 +315,7 @@ export default function AppHeader({ title, profile, hideSearchAndNotifications =
             {/* SEARCH - hidden for Super Admin */}
             {!hideSearchAndNotifications && (
               <>
-                <div className="hidden md:block">
+                {/* <div className="hidden md:block">
                   <SearchInput 
                     showSearchIcon 
                     icon={Search}
@@ -327,7 +327,7 @@ export default function AppHeader({ title, profile, hideSearchAndNotifications =
                     placeholder="Search..."
                     className="w-[200px] md:w-[250px]"
                   />
-                </div>
+                </div> */}
                 <button
                   className="md:hidden p-2 rounded-lg hover:bg-white/10"
                   onClick={() => setShowSearch(true)}
