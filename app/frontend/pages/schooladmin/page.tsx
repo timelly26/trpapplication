@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import AppLayout from "../../AppLayout";
 import { SCHOOLADMIN_MENU_ITEMS, SCHOOLADMIN_TAB_TITLES } from "../../constants/sidebar";
 import RequiredRoles from "../../auth/RequiredRoles";
@@ -24,6 +25,7 @@ import SchoolAdminTeacherTab from "../../components/schooladmin/TeachersTab";
 import SchoolAdminCircularsTab from "../../components/schooladmin/circularTab";
 
 function SchoolAdminContent() {
+  const { data: session } = useSession();
   const tab = useSearchParams().get("tab") ?? "dashboard";
   const title = SCHOOLADMIN_TAB_TITLES[tab] ?? tab.toUpperCase();
   const [profile, setProfile] = useState<{
@@ -35,7 +37,7 @@ function SchoolAdminContent() {
     address?: string;
     userId?: string;
   }>({
-    name: "School Admin",
+    name: session?.user?.name ?? "School Admin",
     subtitle: "School Admin",
   });
 
@@ -49,7 +51,7 @@ function SchoolAdminContent() {
         const u = data.user;
         if (u) {
           setProfile({
-            name: u.name ?? "School Admin",
+            name: u.name ?? session?.user?.name ?? "School Admin",
             subtitle: "School Admin",
             image: u.photoUrl ?? null,
             email: u.email ?? undefined,
@@ -65,7 +67,7 @@ function SchoolAdminContent() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [session?.user?.name]);
 
   const renderComponent = () => {
     switch (tab) {
