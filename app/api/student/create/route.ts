@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       fatherName: body.fatherName,
       aadhaarNo: body.aadhaarNo ? "***" : undefined,
       phoneNo: body.phoneNo,
-      email: body.email,
+      parentEmail: body.email,
       dob: body.dob,
       classId: body.classId,
       totalFee: body.totalFee,
@@ -65,6 +65,8 @@ export async function POST(req: Request) {
       aadhaarNo,
       phoneNo,
       email: emailInput,
+      /** Preferred parent/guardian email; falls back to `email` when omitted */
+      parentEmail: parentEmailInput,
       dob,
       classId: classIdInput,
       address: addressInput,
@@ -108,7 +110,10 @@ export async function POST(req: Request) {
     let effectiveFatherName = fatherName;
     let effectiveAadhaarNo = aadhaarNo;
     let effectivePhoneNo = phoneNo;
-    let effectiveEmailInput = emailInput;
+    let effectiveEmailInput =
+      typeof parentEmailInput === "string" && parentEmailInput.trim()
+        ? parentEmailInput.trim()
+        : emailInput;
     let effectiveDob = dob;
     let effectiveClassIdInput = classIdInput;
     let effectiveAddressInput = addressInput;
@@ -337,15 +342,15 @@ export async function POST(req: Request) {
               ? `${rollNoPrefix}${nextNum}`
               : String(nextNum);
 
-        const emailTrimmed =
+        /** Parent/guardian contact email from the form — never used as the student's login email. */
+        const parentContactEmail =
           typeof effectiveEmailInput === "string" && effectiveEmailInput.trim().length > 0
             ? effectiveEmailInput.trim()
             : null;
+
         const nameLocal = emailLocalPartFromFullName(effectiveName);
-        let userEmail =
-          emailTrimmed && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)
-            ? emailTrimmed
-            : `${nameLocal}@${schoolDomain}`;
+        // Student User.email is always derived from the student's name + school domain (never parent email).
+        let userEmail = `${nameLocal}@${schoolDomain}`;
 
         // Check if email already exists and generate alternative if needed
         let existingUser = await tx.user.findUnique({
@@ -496,7 +501,9 @@ export async function POST(req: Request) {
               parentOccupation: typeof parentOccupation === "string" && parentOccupation.trim() ? parentOccupation.trim() : "-",
               officeAddress: typeof officeAddress === "string" && officeAddress.trim() ? officeAddress.trim() : "-",
               parentPhone: String(effectivePhoneNo).trim(),
-              parentEmail: typeof effectiveEmailInput === "string" && effectiveEmailInput.trim() ? effectiveEmailInput.trim() : userEmail,
+              parentEmail:
+                parentContactEmail ??
+                `parent.${nameLocal}.${nextNum}@${schoolDomain}`,
               parentAadharNo: typeof parentAadharNo === "string" && parentAadharNo.trim() ? parentAadharNo.trim() : `${aadhaarCleaned.slice(0, 8)}0000`,
               parentWhatsapp: typeof parentWhatsapp === "string" && parentWhatsapp.trim() ? parentWhatsapp.trim() : String(effectivePhoneNo).trim(),
               bankAccountNo: typeof bankAccountNo === "string" && bankAccountNo.trim() ? bankAccountNo.trim() : "-",

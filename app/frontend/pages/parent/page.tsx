@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import RequiredRoles from "../../auth/RequiredRoles";
 import AppLayout from "../../AppLayout";
 import { PARENT_MENU_ITEMS } from "../../constants/sidebar";
@@ -52,17 +53,17 @@ type SubscriptionStatusResponse = {
 };
 
 function ParentDashboardInner() {
+  const { data: session } = useSession();
   const tab = useSearchParams().get("tab") ?? "dashboard";
   const title = PARENT_TAB_TITLES[tab] ?? tab.toUpperCase();
-
   const [profile, setProfile] = useState({
-    name: "Parent",
+    name: session?.user?.name ?? "Parent",
     subtitle: "Parent",
-    image: null as string | null,
-    email: undefined as string | undefined,
-    phone: undefined as string | undefined,
+    image: (session?.user as any)?.image ?? null,
+    email: session?.user?.email ?? undefined,
+    phone: (session?.user as any)?.mobile ?? undefined,
     address: undefined as string | undefined,
-    userId: undefined as string | undefined,
+    userId: (session?.user as any)?.id ?? undefined,
   });
 
   const [subStatus, setSubStatus] = useState<SubscriptionStatusResponse | null>(null);
@@ -119,13 +120,13 @@ function ParentDashboardInner() {
         const u = userData.user;
         if (u) {
           setProfile({
-            name: u.name ?? "Parent",
+            name: u.name ?? session?.user?.name ?? "Parent",
             subtitle: "Parent",
-            image: u.photoUrl ?? null,
-            email: u.email ?? undefined,
-            phone: u.mobile ?? undefined,
+            image: u.photoUrl ?? session?.user?.image ?? null,
+            email: u.email ?? session?.user?.email ?? undefined,
+            phone: u.mobile ?? (session?.user as any)?.mobile ?? undefined,
             address: parentDetailsRes.ok ? parentData?.address ?? undefined : undefined,
-            userId: u.id ?? undefined,
+            userId: u.id ?? (session?.user as any)?.id ?? undefined,
           });
         }
       } catch {
@@ -136,7 +137,7 @@ function ParentDashboardInner() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [session?.user?.name, session?.user?.image, session?.user?.email, (session?.user as any)?.mobile, (session?.user as any)?.id]);
 
   useEffect(() => {
     let cancelled = false;

@@ -382,7 +382,7 @@ export default function ParentAttendanceTab() {
            border border-[rgba(255,255,255,0.1)] border-solid rounded-2xl
             shadow-[0px_10px_15px_0px_rgba(0,0,0,0.1),0px_4px_6px_0px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-1
              hover:bg-[rgba(255,255,255,0.08)]
-           hover:shadow-[0px_15px_20px_0px_rgba(0,0,0,0.15),0px_6px_8px_0px_rgba(0,0,0,0.15)] p-5 flex flex-col justify-between">
+           hover:shadow-[0px_15px_20px_0px_rgba(0,0,0,0.15),0px_6px_8px_0px_rgba(0,0,0,0.15)] p-4 sm:p-5 flex flex-col justify-between">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className={`p-2 bg-[#A3E635]/10 rounded-lg ${card.iconBoxClass}`}>
@@ -405,7 +405,7 @@ export default function ParentAttendanceTab() {
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.06] backdrop-blur-xl overflow-hidden">
         <div className="flex items-center justify-between gap-3 sm:px-8 sm:py-5
-        px-6 py-4 border-b border-white/[0.05] bg-white/[0.02]">
+        px-4 py-3 border-b border-white/[0.05] bg-white/[0.02]">
           <h2 className="text-xl font-bold text-white">{formatMonthLabel(monthCursor)}</h2>
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -429,7 +429,7 @@ export default function ParentAttendanceTab() {
           </div>
         </div>
 
-        <div className="px-4 py-4 sm:px-8 sm:py-5">
+        <div className="px-3 py-3 sm:px-8 sm:py-5">
           <div className="flex flex-wrap gap-3">
             {LEGEND_STATUSES.map((status) => (
               <div key={status} className="flex items-center gap-2">
@@ -485,7 +485,7 @@ export default function ParentAttendanceTab() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.05] p-4 sm:p-6">
+      <section className="rounded-3xl border border-white/10 bg-white/[0.05] p-3.5 sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg sm:text-xl font-semibold text-white">{selectedDayLabel}</h3>
           <span

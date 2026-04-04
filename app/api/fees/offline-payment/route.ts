@@ -140,6 +140,19 @@ export async function POST(req: Request) {
       });
     }
 
+    const sumHeadsDue = allHeads.reduce((s, h) => s + h.snapshotDue, 0);
+    const manualDue = Math.max(fee.finalFee - sumHeadsDue, 0);
+
+    if (manualDue > 0.00001) {
+      allHeads.push({
+        key: 'BASE:-1',
+        headType: 'BASE_COMPONENT',
+        componentIndex: -1,
+        componentName: 'General Tuition Fee',
+        snapshotDue: manualDue,
+      });
+    }
+
     const getHeadKey = (h: SelectedHead) => {
       if (h.headType === "BASE_COMPONENT") return `BASE:${h.componentIndex}`;
       return `EXTRA:${h.extraFeeId}`;
@@ -261,7 +274,9 @@ export async function POST(req: Request) {
       .map(([key, allocatedAmount]) => {
         if (key.startsWith("BASE:")) {
           const componentIndex = Number(key.slice("BASE:".length));
-          const componentName = baseComponents[componentIndex]?.name ?? `Component-${componentIndex + 1}`;
+          const componentName = componentIndex === -1 
+            ? "General Tuition Fee" 
+            : baseComponents[componentIndex]?.name ?? `Component-${componentIndex + 1}`;
           return {
             paymentId: "__PAYMENT_ID__",
             studentId: student.id,

@@ -42,6 +42,7 @@ export async function GET(_req: Request, context: RouteParams) {
       include: {
         user: { select: { id: true, name: true, email: true, photoUrl: true } },
         class: { select: { id: true, name: true, section: true } },
+        school: { select: { name: true } },
         fee: true,
       },
     });
@@ -197,6 +198,7 @@ export async function GET(_req: Request, context: RouteParams) {
       student: {
         id: student.id,
         name: student.user?.name ?? "",
+        schoolName: student.school?.name ?? "Timelly School",
         admissionNumber: student.admissionNumber,
         email: student.user?.email ?? "",
         photoUrl: student.user?.photoUrl ?? null,
@@ -227,6 +229,8 @@ export async function GET(_req: Request, context: RouteParams) {
       },
       fee: student.fee
         ? {
+            baseTotalFee: student.fee.totalFee,
+            discountPercent: student.fee.discountPercent,
             totalFee: student.fee.finalFee,
             amountPaid: student.fee.amountPaid,
             remainingFee: student.fee.remainingFee,

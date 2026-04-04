@@ -46,11 +46,11 @@ function TeacherDashboardInner() {
   const [profile, setProfile] = useState({
     name: session?.user?.name ?? "Teacher",
     subtitle: "Teacher",
-    image: null as string | null,
-    email: undefined as string | undefined,
-    phone: undefined as string | undefined,
+    image: (session?.user as any)?.image ?? null,
+    email: session?.user?.email ?? undefined,
+    phone: (session?.user as any)?.mobile ?? undefined,
     address: undefined as string | undefined,
-    userId: undefined as string | undefined,
+    userId: (session?.user as any)?.id ?? undefined,
   });
 
   const renderTabContent = () => {
@@ -96,13 +96,13 @@ function TeacherDashboardInner() {
         const u = data.user;
         if (u) {
           setProfile({
-            name: u.name ?? "Teacher",
+            name: u.name ?? session?.user?.name ?? "Teacher",
             subtitle: "Teacher",
-            image: u.photoUrl ?? null,
-            email: u.email ?? undefined,
-            phone: u.mobile ?? undefined,
+            image: u.photoUrl ?? session?.user?.image ?? null,
+            email: u.email ?? session?.user?.email ?? undefined,
+            phone: u.mobile ?? (session?.user as any)?.mobile ?? undefined,
             address: u.address ?? undefined,
-            userId: u.id ?? undefined,
+            userId: u.id ?? (session?.user as any)?.id ?? undefined,
           });
         }
       } catch {
@@ -112,7 +112,7 @@ function TeacherDashboardInner() {
     return () => {
       cancelled = true;
     };
-  }, [session?.user?.name]);
+  }, [session?.user?.name, session?.user?.image, session?.user?.email, (session?.user as any)?.mobile, (session?.user as any)?.id]);
 
   return (
     <RequiredRoles allowedRoles={["TEACHER"]}>
