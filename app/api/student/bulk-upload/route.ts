@@ -256,15 +256,9 @@ export async function POST(req: Request) {
         // Each student is created in its own short transaction
         await prisma.$transaction(
           async (tx) => {
-            const emailTrimmed =
-              toStr(row.email ?? row.parentEmail ?? row["Parent Email"]) || null;
             const nameLocalPart = emailLocalPartFromFullName(name);
-            const fallbackEmail = `${nameLocalPart}@${schoolDomain}`;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            let userEmail =
-              emailTrimmed && emailRegex.test(emailTrimmed)
-                ? emailTrimmed
-                : fallbackEmail;
+            // Student login email is always name@schoolDomain — CSV/row "email" is parent contact only, not User.email.
+            let userEmail = `${nameLocalPart}@${schoolDomain}`;
 
             const password = dobDate
               .toISOString()

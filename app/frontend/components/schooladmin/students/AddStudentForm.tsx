@@ -255,9 +255,9 @@ export default function AddStudentForm({
             />
             {renderError(errors, "phoneNo")}
           </div>
-          <div>
+          <div className="md:col-span-2">
             <InputField
-              label="Email (optional)"
+              label="Parent / guardian email (optional)"
               value={form.email}
               onChange={(value) => onFieldChange("email", value)}
               placeholder="parent@example.com"
@@ -265,6 +265,9 @@ export default function AddStudentForm({
               autoComplete="email"
               bgColor="white"
             />
+            <p className="mt-1.5 text-[11px] text-white/50 leading-snug">
+              Used for parent contact on the admission record only. The student&apos;s login email is created automatically as their name @ your school domain.
+            </p>
             {renderError(errors, "email")}
           </div>
           <div>
