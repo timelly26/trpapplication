@@ -467,7 +467,9 @@ export default function useStudentPage({ classes = [], reload }: Props) {
         occupation: form.occupation?.trim() || undefined,
         aadhaarNo: aadhaarDigits,
         phoneNo: phoneDigits,
+        /** Parent/guardian contact only — student login email is always auto-generated on the server */
         email: form.email.trim() || undefined,
+        parentEmail: form.email.trim() || undefined,
         dob: form.dob,
         classId: classIdPayload,
         address: form.address?.trim() || undefined,
